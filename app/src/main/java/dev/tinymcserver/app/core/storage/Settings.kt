@@ -36,6 +36,11 @@ object Settings {
         get() = ctxHolder?.let { sp(it).getBoolean("sanitize_shared_logs", true) } ?: true
         set(v) { ctxHolder?.let { sp(it).edit().putBoolean("sanitize_shared_logs", v).apply() } }
 
+    // 启动时自动检查新版本（默认开）
+    var autoCheckUpdate: Boolean
+        get() = ctxHolder?.let { sp(it).getBoolean("auto_check_update", true) } ?: true
+        set(v) { ctxHolder?.let { sp(it).edit().putBoolean("auto_check_update", v).apply() } }
+
     private var ctxHolder: Context? = null
     fun attach(ctx: Context) { ctxHolder = ctx.applicationContext }
 }
