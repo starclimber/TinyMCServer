@@ -1,6 +1,4 @@
-# Tiny MC Server
-
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&pause=1000&width=435&lines=%F0%9F%8E%AETinyMCserver)](https://git.io/typing-svg)
+# [![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&pause=1000&width=435&lines=%F0%9F%8E%AETinyMCserver)](https://git.io/typing-svg)
 
 <p align="center">
   <img src="https://readme-typing-svg.demolab.com/?lines=在 Android 上运行 Minecraft Java 服务器;无需 Root · 无需 Termux · 无需电脑;支持 Paper / Purpur / Folia 核心&center=true&width=650&height=45&duration=2500&pause=1500&color=00FF88&size=22" alt="TinyMCServer" />
