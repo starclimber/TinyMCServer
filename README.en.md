@@ -1,4 +1,6 @@
-# Tiny MC Server
+# [![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&pause=1000&width=435&lines=%F0%9F%8E%AETinyMCserver)](https://git.io/typing-svg)
+
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&pause=1000&color=2FF743&width=435&lines=Run+Minecraft+Java+servers+on+Android;No+Root+%C2%B7+No+Termux+%C2%B7+No+PC;Supports+Paper+%2F+Purpur+%2F+Folia)](https://git.io/typing-svg)
 
 A Minecraft Java Edition **server launcher** that runs on an Android phone.
 
@@ -20,6 +22,7 @@ It bundles a trimmed OpenJDK runtime so the device can create and run Vanilla, P
 - **Multilingual**: the UI and `server.properties` labels support Chinese / English / Français / Español / Русский; auto-detected on first launch and switchable in Settings.
 - **Hide from recents**: an opt-in setting (off by default) that removes the app from the system recents list.
 - **Log-sharing sanitization** (on by default): copying a log automatically hides player IPs, the middle of UUIDs and player names, so it is safe to ask for help in public.
+- **In-app update check**: a "Check for updates" screen under Settings shows the latest version and the full release notes, with a direct download link; the app also checks automatically on launch (can be turned off).
 
 ## Requirements
 
@@ -51,7 +54,7 @@ It bundles a trimmed OpenJDK runtime so the device can create and run Vanilla, P
 
 This app **does not bundle any server software**; all server jars are downloaded on demand from the sources above when an instance is created.
 
-A mirror or proxy prefix can be configured under "Settings → Download sources & mirrors".
+A mirror or proxy prefix can be configured under "Settings → Advanced".
 
 ## Skin Forge
 
