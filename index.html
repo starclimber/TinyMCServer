@@ -41,11 +41,11 @@
   "applicationCategory": "UtilitiesApplication",
   "applicationSubCategory": "Minecraft Server Launcher",
   "operatingSystem": "Android 8.0 (API 26) 及以上",
-  "softwareVersion": "1.1.0",
-  "fileSize": "107.7 MB",
+  "softwareVersion": "1.2.2",
+  "fileSize": "113.0 MB",
   "license": "https://www.gnu.org/licenses/agpl-3.0.html",
   "url": "https://starclimber.github.io/TinyMCServer/",
-  "downloadUrl": "https://github.com/starclimber/TinyMCServer/releases/download/v1.1.0/TinyMCserver-1.1.0.apk",
+  "downloadUrl": "https://github.com/starclimber/TinyMCServer/releases/download/v1.2.2/TinyMCserver-1.2.2.apk",
   "codeRepository": "https://github.com/starclimber/TinyMCServer",
   "programmingLanguage": "Kotlin",
   "author": {
@@ -65,7 +65,9 @@
     "插件管理：从 Modrinth 搜索安装，带完整性校验",
     "实例备份还原与白名单 / OP / 封禁管理",
     "皮肤工坊：种子 + 风格确定性生成 64×64 皮肤，可导出 PNG",
-    "前台服务常驻 + WakeLock + WifiLock"
+    "前台服务常驻 + WakeLock + WifiLock",
+    "日志分享脱敏：复制日志自动隐藏玩家 IP、UUID 中段与玩家名",
+    "应用内更新检查：设置内查看最新版本与更新日志，直达下载"
   ]
 }
 </script>
@@ -253,15 +255,15 @@ footer{border-top:1px solid var(--line);padding:28px 0;font-size:13.5px;color:va
 
 <!-- Hero -->
 <div class="wrap hero">
-  <span class="badge">● v1.1.0 · 开源免费</span>
+  <span class="badge">● v1.2.2 · 开源免费</span>
   <h1>在手机上跑 <span class="g">Minecraft Java 版</span><br>服务端</h1>
   <p class="sub">
     内置精简后的 OpenJDK 运行时，可让 Android 设备直接创建并运行
     Vanilla、Paper、Purpur、Folia 服务端 —— 不需要 root，不依赖 Termux，也不涉及任何客户端渲染。
   </p>
   <div class="cta">
-    <a class="btn btn-p" href="https://github.com/starclimber/TinyMCServer/releases/download/v1.1.0/TinyMCserver-1.1.0.apk">
-      ↓ 下载 APK（107.7 MB）
+    <a class="btn btn-p" href="https://github.com/starclimber/TinyMCServer/releases/download/v1.2.2/TinyMCserver-1.2.2.apk">
+      ↓ 下载 APK（113.0 MB）
     </a>
     <a class="btn btn-s" href="https://github.com/starclimber/TinyMCServer">查看源码</a>
   </div>
@@ -319,6 +321,16 @@ footer{border-top:1px solid var(--line);padding:28px 0;font-size:13.5px;color:va
         <h3>多语言</h3>
         <p>简体中文 / English / Français / Español / Русский，切换即时生效，无需重启。</p>
       </div>
+      <div class="card">
+        <span class="ic">🛡️</span>
+        <h3>日志分享脱敏</h3>
+        <p>复制日志时自动隐藏玩家 IP、UUID 中段与玩家名，公开求助更安心。</p>
+      </div>
+      <div class="card">
+        <span class="ic">🔄</span>
+        <h3>应用内更新检查</h3>
+        <p>设置内查看最新版本与完整更新日志，并可直达下载，无需自己去仓库翻。</p>
+      </div>
     </div>
   </div>
 </section>
@@ -355,7 +367,7 @@ footer{border-top:1px solid var(--line);padding:28px 0;font-size:13.5px;color:va
         </tbody>
       </table>
     </div>
-    <div class="note">可在「设置 → 下载源与镜像」中配置镜像或代理前缀。</div>
+    <div class="note">可在「设置 → 高级」中配置镜像或代理前缀。</div>
 
     <h2 style="margin-top:44px">内置运行时（JRE）</h2>
     <p class="lead">内置三个版本的 OpenJDK 运行时（aarch64），来源为 Termux 官方仓库。</p>
@@ -454,8 +466,8 @@ footer{border-top:1px solid var(--line);padding:28px 0;font-size:13.5px;color:va
   <h2 style="margin-bottom:10px">现在就在手机上开一局</h2>
   <p class="lead" style="margin-bottom:24px">下载 APK，四步建服，把世界装进口袋。</p>
   <div class="cta">
-    <a class="btn btn-p" href="https://github.com/starclimber/TinyMCServer/releases/download/v1.1.0/TinyMCserver-1.1.0.apk">
-      ↓ 下载 v1.1.0 APK
+    <a class="btn btn-p" href="https://github.com/starclimber/TinyMCServer/releases/download/v1.2.2/TinyMCserver-1.2.2.apk">
+      ↓ 下载 v1.2.2 APK
     </a>
     <a class="btn btn-s" href="https://github.com/starclimber/TinyMCServer/releases">所有版本</a>
   </div>
