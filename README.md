@@ -1,8 +1,6 @@
 # [![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&pause=1000&width=435&lines=%F0%9F%8E%AETinyMCserver)](https://git.io/typing-svg)
 
-<p align="center">
-  <img src="https://readme-typing-svg.demolab.com/?lines=在 Android 上运行 Minecraft Java 服务器;无需 Root · 无需 Termux · 无需电脑;支持 Paper / Purpur / Folia 核心&center=true&width=650&height=45&duration=2500&pause=1500&color=00FF88&size=22" alt="TinyMCServer" />
-</p>
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&pause=1000&color=2FF743&width=435&lines=%E5%9C%A8+Android+%E4%B8%8A%E8%BF%90%E8%A1%8C+Minecraft+Java+%E6%9C%8D%E5%8A%A1%E5%99%A8;%E6%97%A0%E9%9C%80+Root+%C2%B7+%E6%97%A0%E9%9C%80+Termux+%C2%B7+%E6%97%A0%E9%9C%80%E7%94%B5%E8%84%91;%E6%94%AF%E6%8C%81+Paper+%2F+Purpur+%2F+Folia+%E6%A0%B8%E5%BF%83)](https://git.io/typing-svg)
 
 
 一个运行在 Android 手机上的 Minecraft Java 版**服务端启动器**。
