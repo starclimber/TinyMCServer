@@ -1,6 +1,5 @@
 package dev.tinymcserver.app.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,58 +9,71 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import dev.tinymcserver.app.MainActivity
+import dev.tinymcserver.app.core.i18n.AppLanguage
+import dev.tinymcserver.app.core.i18n.I18n
+import dev.tinymcserver.app.core.i18n.t
 import dev.tinymcserver.app.core.runtime.JreManager
 import dev.tinymcserver.app.core.storage.Settings
 import dev.tinymcserver.app.core.util.BatteryUtil
 import dev.tinymcserver.app.ui.AppViewModel
 import dev.tinymcserver.app.ui.components.FieldCard
-import dev.tinymcserver.app.ui.components.LabeledField
 import dev.tinymcserver.app.ui.components.SectionTitle
-import kotlinx.coroutines.launch
-import dev.tinymcserver.app.core.i18n.t
-import dev.tinymcserver.app.core.i18n.AppLanguage
-import dev.tinymcserver.app.core.i18n.I18n
-import dev.tinymcserver.app.MainActivity
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Switch
+import dev.tinymcserver.app.ui.components.SettingRow
 
+/**
+ * 设置主页：**分组 + 列表式**。
+ *
+ * 只放高频项（语言、两个开关、保活状态、关于）；低频与偏技术的项
+ * （JRE 管理、下载源与镜像、RCON）收进各自的子页面，避免主页越堆越长。
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(vm: AppViewModel, nav: NavController) {
     val ctx = LocalContext.current
     Settings.attach(ctx)
-    val scope = rememberCoroutineScope()
-    var refreshFlag by remember { mutableIntStateOf(0) }
-    var rcon by remember { mutableStateOf(Settings.getRconPassword(ctx)) }
-    var mirror by remember { mutableStateOf(Settings.mirrorBase) }
-    var ignoringBattery by remember { mutableStateOf(BatteryUtil.isIgnoring(ctx)) }
+
     var hideRecents by remember { mutableStateOf(Settings.hideFromRecents) }
     var sanitizeLogs by remember { mutableStateOf(Settings.sanitizeSharedLogs) }
+    var autoCheck by remember { mutableStateOf(Settings.autoCheckUpdate) }
+    var ignoringBattery by remember { mutableStateOf(BatteryUtil.isIgnoring(ctx)) }
+    var showLangPicker by remember { mutableStateOf(false) }
 
-    LaunchedEffect(refreshFlag) { ignoringBattery = BatteryUtil.isIgnoring(ctx) }
+    val appVersion = remember {
+        runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }
+            .getOrNull() ?: "?"
+    }
+    val jreSummary = remember {
+        val installed = JreManager.BUNDLED.filter { JreManager.isInstalled(ctx, it) }
+        if (installed.isEmpty()) t("未解压")
+        else t("已安装：%s", installed.joinToString(" / ") { "JRE $it" })
+    }
+
+    LaunchedEffect(Unit) { ignoringBattery = BatteryUtil.isIgnoring(ctx) }
 
     Scaffold(
         topBar = {
@@ -79,119 +91,64 @@ fun SettingsScreen(vm: AppViewModel, nav: NavController) {
             Modifier.fillMaxSize().padding(pad).verticalScroll(rememberScrollState())
                 .padding(horizontal = 12.dp),
         ) {
+            I18n.revision // 语言变化时触发重组
+
+            // ---------------- 通用 ----------------
             SectionTitle(t("通用"))
             FieldCard {
-                Text(t("语言"), style = MaterialTheme.typography.titleSmall)
-                I18n.revision
-                AppLanguage.entries.forEach { lang ->
-                    Row(
-                        Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        RadioButton(
-                            selected = I18n.current == lang,
-                            onClick = { I18n.setLanguage(ctx, lang) },
-                        )
-                        Text(lang.displayName)
-                    }
-                }
-
-                HorizontalDivider(Modifier.padding(vertical = 8.dp))
-
-                Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Text(t("从最近任务中隐藏"), style = MaterialTheme.typography.titleSmall)
-                        Text(
-                            t("开启后，本应用不出现在系统「最近任务」列表中。"),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = hideRecents,
-                        onCheckedChange = { v ->
-                            hideRecents = v
-                            Settings.hideFromRecents = v
-                            (ctx as? MainActivity)?.applyRecentsVisibility()
-                        },
-                    )
-                }
-
-                HorizontalDivider(Modifier.padding(vertical = 8.dp))
-
-                Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Text(t("日志分享脱敏"), style = MaterialTheme.typography.titleSmall)
-                        Text(
-                            t("复制或分享日志时，自动隐藏玩家 IP、UUID 中段与玩家名，方便公开求助。"),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Switch(
-                        checked = sanitizeLogs,
-                        onCheckedChange = { v ->
-                            sanitizeLogs = v
-                            Settings.sanitizeSharedLogs = v
-                        },
-                    )
-                }
-            }
-
-            SectionTitle(t("JRE 管理"))
-            FieldCard {
-                Text(
-                    t("内置 JRE 打包在 APK 中，首次使用解压到私有目录。"),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                SettingRow(
+                    title = t("语言"),
+                    subtitle = I18n.current.displayName,
+                    onClick = { showLangPicker = true },
                 )
-                val bundled = vm.bundledJres()
-                if (bundled.isEmpty()) {
-                    Text(t("未检测到内置 JRE 归档。"), color = MaterialTheme.colorScheme.error)
-                }
-                bundled.forEach { major ->
-                    val installed = vm.jreInstalled(major)
-                    Row(
-                        Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text("JRE $major", style = MaterialTheme.typography.titleSmall)
-                            Text(
-                                if (installed)
-                                    t("已安装 · %s · ", vm.jreVersionLabel(major)) +
-                                        "${"%.0f".format(vm.jreSize(major) / 1048576.0)} MB"
-                                else t("未解压"),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        if (installed) {
-                            OutlinedButton(onClick = {
-                                scope.launch {
-                                    JreManager.uninstall(ctx, major)
-                                    refreshFlag++
-                                }
-                            }) { Text(t("重装")) }
-                        } else {
-                            Button(onClick = { vm.installJre(major) { refreshFlag++ } }) {
-                                Text(t("解压安装"))
-                            }
-                        }
-                    }
-                }
-                OutlinedButton(
-                    onClick = { vm.installJre(21) { refreshFlag++ } },
-                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                ) { Text(t("一键安装 JRE 21（推荐）")) }
+                HorizontalDivider()
+                SettingRow(
+                    title = t("从最近任务中隐藏"),
+                    subtitle = t("开启后，本应用不出现在系统「最近任务」列表中。"),
+                    trailing = {
+                        Switch(
+                            checked = hideRecents,
+                            onCheckedChange = { v ->
+                                hideRecents = v
+                                Settings.hideFromRecents = v
+                                (ctx as? MainActivity)?.applyRecentsVisibility()
+                            },
+                        )
+                    },
+                )
+                HorizontalDivider()
+                SettingRow(
+                    title = t("日志分享脱敏"),
+                    subtitle = t("复制日志时自动隐藏玩家 IP、UUID 中段与玩家名。"),
+                    trailing = {
+                        Switch(
+                            checked = sanitizeLogs,
+                            onCheckedChange = { v ->
+                                sanitizeLogs = v
+                                Settings.sanitizeSharedLogs = v
+                            },
+                        )
+                    },
+                )
             }
 
+            // ---------------- 服务端 ----------------
+            SectionTitle(t("服务端"))
+            FieldCard {
+                SettingRow(
+                    title = t("JRE 管理"),
+                    subtitle = jreSummary,
+                    onClick = { nav.navigate("settings/jre") },
+                )
+                HorizontalDivider()
+                SettingRow(
+                    title = t("高级"),
+                    subtitle = t("下载源与镜像、RCON"),
+                    onClick = { nav.navigate("settings/advanced") },
+                )
+            }
+
+            // ---------------- 保活 ----------------
             SectionTitle(t("保活"))
             FieldCard {
                 Text(
@@ -216,41 +173,65 @@ fun SettingsScreen(vm: AppViewModel, nav: NavController) {
                 )
             }
 
-            SectionTitle(t("下载源与镜像"))
-            FieldCard {
-                Text(t("默认源：PaperMC / Purpur / Folia / Mojang 官方。可填写镜像前缀。"))
-                LabeledField(t("镜像前缀"), mirror, { mirror = it })
-                Button(
-                    onClick = { Settings.mirrorBase = mirror.trim(); vm.toast(t("已保存镜像设置")) },
-                    modifier = Modifier.padding(top = 6.dp),
-                ) { Text(t("保存")) }
-            }
-
-            SectionTitle(t("存储"))
-            FieldCard {
-                Text(t("实例默认存储在应用私有目录，无需存储权限。"))
-                OutlinedButton(onClick = { vm.toast(t("请到实例「文件」页导出到外置存储")) }) {
-                    Text(t("迁移到 SAF 外置存储（导出）"))
-                }
-            }
-
-            SectionTitle("RCON")
-            FieldCard {
-                Text(t("RCON 密码使用 Android Keystore 加密存储。"))
-                LabeledField(t("RCON 密码"), rcon, { rcon = it })
-                Button(
-                    onClick = { Settings.setRconPassword(ctx, rcon); vm.toast(t("已加密保存")) },
-                    modifier = Modifier.padding(top = 6.dp),
-                ) { Text(t("保存密码")) }
-            }
-
+            // ---------------- 关于 ----------------
             SectionTitle(t("关于"))
             FieldCard {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { nav.navigate("about") }) { Text(t("关于本应用")) }
-                }
+                SettingRow(
+                    title = t("检查更新"),
+                    subtitle = t("当前版本 %s", appVersion),
+                    onClick = { nav.navigate("update") },
+                )
+                HorizontalDivider()
+                SettingRow(
+                    title = t("启动时自动检查新版本"),
+                    trailing = {
+                        Switch(
+                            checked = autoCheck,
+                            onCheckedChange = { v ->
+                                autoCheck = v
+                                Settings.autoCheckUpdate = v
+                            },
+                        )
+                    },
+                )
+                HorizontalDivider()
+                SettingRow(
+                    title = t("关于本应用"),
+                    onClick = { nav.navigate("about") },
+                )
             }
+
             Text(" ", Modifier.padding(12.dp))
         }
+    }
+
+    // 语言：列表式 → 点一行弹选择
+    if (showLangPicker) {
+        AlertDialog(
+            onDismissRequest = { showLangPicker = false },
+            title = { Text(t("语言")) },
+            text = {
+                Column {
+                    AppLanguage.entries.forEach { lang ->
+                        Row(
+                            Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(
+                                selected = I18n.current == lang,
+                                onClick = {
+                                    I18n.setLanguage(ctx, lang)
+                                    showLangPicker = false
+                                },
+                            )
+                            Text(lang.displayName)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showLangPicker = false }) { Text(t("关闭")) }
+            },
+        )
     }
 }
