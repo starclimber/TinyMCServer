@@ -43,7 +43,18 @@ import dev.tinymcserver.app.ui.screens.PluginImportScreen
 import dev.tinymcserver.app.ui.screens.ServerConfigScreen
 import dev.tinymcserver.app.ui.screens.SettingsScreen
 import dev.tinymcserver.app.ui.screens.SkinForgeScreen
+import dev.tinymcserver.app.ui.screens.UpdateScreen
+import dev.tinymcserver.app.ui.screens.JreManageScreen
+import dev.tinymcserver.app.ui.screens.AdvancedSettingsScreen
 import dev.tinymcserver.app.core.i18n.t
+import dev.tinymcserver.app.core.storage.Settings
+import dev.tinymcserver.app.core.update.UpdateChecker
+import dev.tinymcserver.app.core.update.UpdateResult
+import dev.tinymcserver.app.ui.components.UpdateDialog
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 @Composable
 fun AppNav() {
@@ -51,9 +62,21 @@ fun AppNav() {
     val vm: AppViewModel = viewModel()
     val snackbar = remember { SnackbarHostState() }
     val progress by vm.progress.collectAsState()
+    val ctx = LocalContext.current
+    val appVersion = remember { UpdateChecker.currentVersion(ctx) }
+    var availableUpdate by remember { mutableStateOf<UpdateResult?>(null) }
 
     LaunchedEffect(Unit) {
         vm.message.collect { snackbar.showSnackbar(it) }
+    }
+
+    // 启动后静默检查新版本（可在「设置 → 关于」关闭）。失败静默忽略，不打扰用户。
+    LaunchedEffect(Unit) {
+        if (!Settings.autoCheckUpdate) return@LaunchedEffect
+        delay(2500)
+        runCatching {
+            withContext(Dispatchers.IO) { UpdateChecker.check(appVersion) }
+        }.getOrNull()?.takeIf { it.hasUpdate }?.let { availableUpdate = it }
     }
 
     // 兜底：万一回退栈被弹空（例如连点返回），NavHost 会变成一片空白。
@@ -118,6 +141,9 @@ fun AppNav() {
             composable("skinforge") { SkinForgeScreen(nav) }
             composable("settings") { SettingsScreen(vm, nav) }
             composable("about") { AboutScreen(nav) }
+            composable("update") { UpdateScreen(nav) }
+            composable("settings/jre") { JreManageScreen(vm, nav) }
+            composable("settings/advanced") { AdvancedSettingsScreen(vm, nav) }
         }
     }
 
@@ -139,6 +165,14 @@ fun AppNav() {
                     )
                 }
             },
+        )
+    }
+
+    availableUpdate?.let { result ->
+        UpdateDialog(
+            result = result,
+            onDismiss = { availableUpdate = null },
+            onToast = { vm.toast(it) },
         )
     }
 }
