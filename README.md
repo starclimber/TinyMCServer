@@ -1,5 +1,12 @@
 # Tiny MC Server
 
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&pause=1000&width=435&lines=%F0%9F%8E%AETinyMCserver)](https://git.io/typing-svg)
+
+<p align="center">
+  <img src="https://readme-typing-svg.demolab.com/?lines=在 Android 上运行 Minecraft Java 服务器;无需 Root · 无需 Termux · 无需电脑;支持 Paper / Purpur / Folia 核心&center=true&width=650&height=45&duration=2500&pause=1500&color=00FF88&size=22" alt="TinyMCServer" />
+</p>
+
+
 一个运行在 Android 手机上的 Minecraft Java 版**服务端启动器**。
 
 它内置精简后的 OpenJDK 运行时，可让设备直接创建并运行 Vanilla、Paper、Purpur、Folia 服务端 —— 不需要 root，不依赖 Termux，也不涉及任何客户端渲染。
