@@ -5,6 +5,23 @@
 
 ---
 
+## [1.2.2] — 2026-10-05
+
+### 新增 / Added
+
+- **应用内更新检查**：「设置 → 关于 → 检查更新」进入**独立页面**，显示当前版本、检查状态、最新版本与**完整更新日志**（把你落后的每个版本一次性列全），并可「前往下载」直达 APK。
+  启动时也会静默检查一次（可在「设置 → 关于」关闭）；发现新版本会弹窗提示，点「前往下载」即可，不用再自己去仓库翻。
+  **In-app update check**: "Settings → About → Check for updates" opens a **dedicated screen** showing the current version, the check status, the latest version and the **full release notes** (every version you are behind, in one list), with a "Download" button that goes straight to the APK.
+  The app also checks silently on launch (can be disabled under Settings → About); when a new version is found it shows a dialog, so there is no need to browse the repo yourself.
+
+### 变更 / Changed
+
+- 版本号 `1.2.1` → `1.2.2`（versionCode 5）。
+- 启动时自动检查新版本，默认开启；静默检查失败不打扰用户。
+- 只统计正式版（跳过 draft 与 prerelease）。
+
+---
+
 ## [1.2.1] — 2026-10-03
 
 ### 新增 / Added
