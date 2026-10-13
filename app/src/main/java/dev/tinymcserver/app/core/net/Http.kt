@@ -48,6 +48,32 @@ object Http {
         throw last ?: RuntimeException("GET failed: $url")
     }
 
+    /**
+     * 条件 GET：带上 [etag] 作为 If-None-Match。
+     *
+     * @return (body, etag)：命中缓存（304）时 body 为 null；否则 body 为响应正文、etag 为响应头。
+     * @throws HttpException 状态码异常（429 / 5xx 标记为可重试）
+     */
+    fun getConditional(url: String, etag: String?, timeoutSec: Long = 12L): Pair<String?, String?> {
+        val c = client.newBuilder()
+            .connectTimeout(timeoutSec, TimeUnit.SECONDS)
+            .readTimeout(timeoutSec, TimeUnit.SECONDS)
+            .build()
+        val b = Request.Builder().url(url).header("User-Agent", UA)
+        if (!etag.isNullOrBlank()) b.header("If-None-Match", etag)
+        c.newCall(b.build()).execute().use { r ->
+            return when {
+                r.code == 304 -> null to etag
+                r.isSuccessful -> (r.body?.string() ?: "") to r.header("ETag")
+                else -> throw HttpException(
+                    r.code,
+                    r.code == 429 || r.code in 500..599,
+                    "HTTP ${r.code} @ $url",
+                )
+            }
+        }
+    }
+
     private fun getOnce(url: String): String {
         val req = Request.Builder().url(url).header("User-Agent", UA).build()
         client.newCall(req).execute().use { r ->
