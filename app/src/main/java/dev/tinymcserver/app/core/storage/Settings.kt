@@ -41,6 +41,20 @@ object Settings {
         get() = ctxHolder?.let { sp(it).getBoolean("auto_check_update", true) } ?: true
         set(v) { ctxHolder?.let { sp(it).edit().putBoolean("auto_check_update", v).apply() } }
 
+    // 更新检查的 ETag 缓存（避免重复拉取整份 Release 列表）
+    fun updateCacheEtag(ctx: Context): String =
+        sp(ctx).getString("update_etag", "") ?: ""
+
+    fun updateCacheBody(ctx: Context): String =
+        sp(ctx).getString("update_body", "") ?: ""
+
+    fun saveUpdateCache(ctx: Context, etag: String?, body: String) {
+        sp(ctx).edit()
+            .putString("update_etag", etag ?: "")
+            .putString("update_body", body)
+            .apply()
+    }
+
     private var ctxHolder: Context? = null
     fun attach(ctx: Context) { ctxHolder = ctx.applicationContext }
 }
