@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  仅对自建更新镜像放开明文 HTTP（HTTPS 证书就绪前的回退通道）；
+  其余所有网络请求仍然强制 HTTPS，不影响安全性。
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">quest.l.cd</domain>
+    </domain-config>
+</network-security-config>
