@@ -5,13 +5,29 @@
 
 ---
 
+## [1.2.3] — 2026-10-12
+
+### 优化 / Improved
+
+- **更新检查快多了**：改用自建镜像源，并按 **HTTPS → HTTP → GitHub 官方** 的顺序自动回退。
+  同时支持 **ETag 条件请求** —— 内容没变时服务端直接返回 304，几乎零流量；实测检查耗时从数秒降到 1~2 秒。
+  **Faster update check**: it now uses a self-hosted mirror, falling back automatically in the order **HTTPS → HTTP → GitHub official**.
+  It also supports **ETag conditional requests** — when nothing changed the server returns 304 with almost no traffic; a check dropped from several seconds to 1–2 seconds.
+
+### 变更 / Changed
+
+- 镜像源请求超时收紧到 12 秒，避免某个源不可用时长时间卡住。
+- 版本号 `1.2.2` → `1.2.3`（versionCode 6）。
+
+---
+
 ## [1.2.2] — 2026-10-05
 
 ### 新增 / Added
 
-- **应用内更新检查**：「设置 → 关于 → 检查更新」进入**独立页面**，显示当前版本、检查状态、最新版本与**完整更新日志**（把你落后的每个版本一次性列全），并可「前往下载」直达 APK。
-  启动时也会静默检查一次（可在「设置 → 关于」关闭）；发现新版本会弹窗提示，点「前往下载」即可，不用再自己去仓库翻。
-  **In-app update check**: "Settings → About → Check for updates" opens a **dedicated screen** showing the current version, the check status, the latest version and the **full release notes** (every version you are behind, in one list), with a "Download" button that goes straight to the APK.
+- **应用内更新检查**：「设置 → 关于 → 检查更新」进入**独立页面**，显示当前版本、检查状态、最新版本与**完整更新日志**（落后的每个版本一次性列全），并可「前往下载」直达 APK。
+  启动时也会静默检查一次（可在「设置 → 关于」关闭）；发现新版本会弹窗提示，点「前往下载」即可，无需前往仓库手动查看。
+  **In-app update check**: "Settings → About → Check for updates" opens a **dedicated screen** showing the current version, the check status, the latest version and the **full release notes** (every version behind the current one, in one list), with a "Download" button that goes straight to the APK.
   The app also checks silently on launch (can be disabled under Settings → About); when a new version is found it shows a dialog, so there is no need to browse the repo yourself.
 
 ### 变更 / Changed
@@ -31,7 +47,7 @@
   复制出来的内容可以直接贴进公开的 issue，不必手动删。可在设置中关闭。
   **Log-sharing sanitization** (Settings → General, **on by default**): when copying a log (diagnose / error summary / JRE self-test / deep probe), sensitive data is handled automatically —
   player **IPs** → `x.x.x.x`; **UUIDs** keep only the first 8 and last 4 characters with the middle masked by `*`; **player names** → `Player1` / `Player2`… (names inside `/op`, `/ban`, etc. are handled too).
-  Whatever you copy can be pasted straight into a public issue — no manual redaction. It can be turned off in Settings.
+  The copied output can be pasted straight into a public issue — no manual redaction. It can be turned off in Settings.
 
 ### 变更 / Changed
 
@@ -69,8 +85,6 @@
   Added a repository link on the About screen.
 
 ### 修复 / Fixed
-
-> 条目按**用户看到的症状**撰写，便于按现象搜索，也方便直接对照 issue 模板里的「复现步骤」。
 
 - **手机灭屏几分钟后，服务器掉线 —— 同一局域网也连不上**（Android 14 及以上）。
   **A few minutes after the phone's screen turns off, the server drops off — unreachable even on the same LAN** (Android 14+).
