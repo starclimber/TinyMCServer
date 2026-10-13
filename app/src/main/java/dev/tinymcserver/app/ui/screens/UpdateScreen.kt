@@ -71,7 +71,7 @@ fun UpdateScreen(nav: NavController) {
     LaunchedEffect(nonce) {
         state = UpdateUiState.Checking
         state = runCatching {
-            withContext(Dispatchers.IO) { UpdateChecker.check(currentVersion) }
+            withContext(Dispatchers.IO) { UpdateChecker.check(currentVersion, ctx) }
         }.fold(
             onSuccess = { UpdateUiState.Done(it) },
             onFailure = { UpdateUiState.Failed(it.message ?: "") },
