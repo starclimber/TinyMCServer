@@ -1,6 +1,7 @@
 package dev.tinymcserver.app.core.update
 
 import dev.tinymcserver.app.core.net.Http
+import dev.tinymcserver.app.core.storage.Settings
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -39,6 +40,20 @@ data class UpdateResult(
  */
 object UpdateChecker {
 
+    /**
+     * 更新源，按顺序尝试，第一个成功的即采用：
+     *   1. HTTPS 代理（自建，最快）
+     *   2. HTTP 代理（同上，HTTPS 证书未就绪时的回退）
+     *   3. GitHub 官方 API（最终回退）
+     *
+     * 代理是「透明」的 —— 返回的 JSON 结构与 GitHub 完全一致，因此解析逻辑共用。
+     */
+    private val SOURCES = listOf(
+        "https://tinymcserver-releases.quest.l.cd/api",
+        "http://tinymcserver-releases.quest.l.cd/api",
+        "https://api.github.com/repos/starclimber/TinyMCServer/releases?per_page=20",
+    )
+
     private const val API_RELEASES =
         "https://api.github.com/repos/starclimber/TinyMCServer/releases?per_page=20"
 
@@ -56,8 +71,8 @@ object UpdateChecker {
      * @return 始终返回结果对象；[UpdateResult.hasUpdate] 为 false 表示已是最新。
      * @throws Exception 网络失败 / 解析失败 —— 由调用方决定如何提示。
      */
-    fun check(currentVersion: String): UpdateResult {
-        val arr = JSONArray(Http.get(API_RELEASES))
+    fun check(currentVersion: String, ctx: android.content.Context? = null): UpdateResult {
+        val arr = JSONArray(fetchReleaseList(ctx))
 
         val newer = mutableListOf<ReleaseNote>()
         var latestVersion = currentVersion
@@ -100,6 +115,38 @@ object UpdateChecker {
             pageUrl = pageUrl,
             releases = sorted,
         )
+    }
+
+    /**
+     * 依次尝试各个更新源，返回 Release 列表 JSON 文本。
+     *
+     * 带 ETag 条件请求：若内容没变，服务端返回 304（0 字节），直接复用上次缓存。
+     */
+    private fun fetchReleaseList(ctx: android.content.Context?): String {
+        var last: Throwable? = null
+        val cachedBody = ctx?.let { Settings.updateCacheBody(it) }.orEmpty()
+        val cachedEtag = ctx?.let { Settings.updateCacheEtag(it) }.orEmpty()
+
+        for (url in SOURCES) {
+            try {
+                val (body, etag) = Http.getConditional(url, cachedEtag.ifBlank { null })
+                if (body != null) {
+                    ctx?.let { Settings.saveUpdateCache(it, etag, body) }
+                    return body
+                }
+                // 304：内容未变，用缓存
+                if (cachedBody.isNotBlank()) return cachedBody
+                // 有 ETag 但没有缓存（异常情况）：无条件再取一次
+                val (b2, e2) = Http.getConditional(url, null)
+                if (b2 != null) {
+                    ctx?.let { Settings.saveUpdateCache(it, e2, b2) }
+                    return b2
+                }
+            } catch (e: Throwable) {
+                last = e
+            }
+        }
+        throw last ?: RuntimeException("no update source available")
     }
 
     /** latest 是否比 current 新（逐段比较点分数字，容忍 "1.2" 与 "1.2.0" 这类差异）。 */
