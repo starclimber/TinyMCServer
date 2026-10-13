@@ -75,7 +75,7 @@ fun AppNav() {
         if (!Settings.autoCheckUpdate) return@LaunchedEffect
         delay(2500)
         runCatching {
-            withContext(Dispatchers.IO) { UpdateChecker.check(appVersion) }
+            withContext(Dispatchers.IO) { UpdateChecker.check(appVersion, ctx) }
         }.getOrNull()?.takeIf { it.hasUpdate }?.let { availableUpdate = it }
     }
 
