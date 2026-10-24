@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import dev.tinymcserver.app.core.model.ServerInstance
 import dev.tinymcserver.app.core.net.Http
 import dev.tinymcserver.app.core.plugin.PluginSearch
+import dev.tinymcserver.app.core.util.HashUtil
 import dev.tinymcserver.app.core.model.ServerType
 import dev.tinymcserver.app.core.runtime.JreManager
 import dev.tinymcserver.app.core.server.ServerInstaller
@@ -228,6 +229,24 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                         )
                     }
                 }
+                // 与 Modrinth 公布的摘要比对（优先 sha512，其次 sha1）
+                val expected = when {
+                    d.sha512.isNotBlank() -> HashUtil.SHA512 to d.sha512
+                    d.sha1.isNotBlank() -> HashUtil.SHA1 to d.sha1
+                    else -> null
+                }
+                if (expected != null) {
+                    val ok = withContext(Dispatchers.IO) {
+                        HashUtil.verify(out, expected.second, expected.first)
+                    }
+                    if (ok == false) {
+                        runCatching { out.delete() }
+                        throw RuntimeException(
+                            t("插件校验失败（%s 不匹配），已删除", expected.first)
+                        )
+                    }
+                }
+
                 DownloadNotifier.finish(ctx, taskId)
                 toast(t("已下载 %s（重启服务端后生效）", d.filename))
                 onDone(true)
