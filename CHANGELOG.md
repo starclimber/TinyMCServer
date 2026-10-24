@@ -5,6 +5,21 @@
 
 ---
 
+## [1.2.4] — 2026-10-22
+
+### 安全 / Security
+
+- **下载文件现在会校验摘要**：服务端 jar 与插件 jar 下载完成后，都会与上游公布的哈希比对，不一致立即删除并提示重试，避免半截或被篡改的文件被当成可用资源。
+  各发行版公布的算法不同，按源使用对应算法：**Paper / Folia → SHA-256**、**Mojang Vanilla → SHA-1**、**Purpur → MD5**、**Modrinth 插件 → SHA-512（回退 SHA-1）**。
+  **Downloads are now verified**: after a server jar or plugin jar finishes downloading, its digest is compared against the hash published upstream; on mismatch the file is deleted and a retry is suggested — no more half-written or tampered jars being treated as usable.
+  Each publisher uses a different algorithm, so the matching one is applied: **Paper / Folia → SHA-256**, **Mojang Vanilla → SHA-1**, **Purpur → MD5**, **Modrinth plugins → SHA-512 (SHA-1 fallback)**.
+
+### 变更 / Changed
+
+- 版本号 `1.2.3` → `1.2.4`（versionCode 7）。
+
+---
+
 ## [1.2.3] — 2026-10-12
 
 ### 优化 / Improved
