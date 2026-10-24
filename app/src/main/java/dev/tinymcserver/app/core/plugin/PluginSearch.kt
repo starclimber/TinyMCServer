@@ -24,8 +24,17 @@ object PluginSearch {
         val slug: String,
     )
 
-    /** [size] 为上游声明的字节数，下载完成后用于完整性校验 */
-    data class Download(val url: String, val filename: String, val size: Long)
+    /**
+     * [size] 为上游声明的字节数，下载完成后用于完整性校验。
+     * [sha512] / [sha1] 为 Modrinth 公布的摘要（优先用 sha512）。
+     */
+    data class Download(
+        val url: String,
+        val filename: String,
+        val size: Long,
+        val sha512: String = "",
+        val sha1: String = "",
+    )
 
     /**
      * @param loader Bukkit 系插件在 Modrinth 中对应的 loader 标识：paper / purpur / folia / spigot / bukkit
@@ -84,7 +93,14 @@ object PluginSearch {
             val dl = f["url"]?.jsonPrimitive?.content ?: return@withContext null
             val fn = f["filename"]?.jsonPrimitive?.content ?: "plugin.jar"
             val sz = f["size"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0L
-            Download(dl, fn, sz)
+            val hashes = f["hashes"]?.jsonObject
+            Download(
+                url = dl,
+                filename = fn,
+                size = sz,
+                sha512 = hashes?.get("sha512")?.jsonPrimitive?.content.orEmpty(),
+                sha1 = hashes?.get("sha1")?.jsonPrimitive?.content.orEmpty(),
+            )
         }
 
     private fun enc(s: String) = URLEncoder.encode(s, "UTF-8")
