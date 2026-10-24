@@ -1,11 +1,5 @@
 name: Mirror to Codeberg
 
-# 推送到 main / 打 tag / 手动触发时，把仓库镜像到 Codeberg；
-# 打 tag 时还会把 GitHub Release 的说明与 APK 一并搬到 Codeberg。
-#
-# 只需一个 Secret（Settings → Secrets and variables → Actions）：
-#   CODEBERG_TOKEN = Codeberg access token（需 write:repository，加密存储）
-
 on:
   push:
     branches: [main]
@@ -20,27 +14,24 @@ env:
   CODEBERG_USER: starclimber
   CODEBERG_REPO: TinyMCServer
   CODEBERG_API: https://codeberg.org/api/v1
+  GH_REPO: starclimber/TinyMCServer
 
 jobs:
   mirror:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout (full history + tags)
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # ---------- 1. 代码 + 标签 ----------
-      - name: Push to Codeberg
+      - name: Push code and tags to Codeberg
         env:
           CODEBERG_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
         run: |
           set -euo pipefail
-          if [ -z "${CODEBERG_TOKEN:-}" ]; then
-            echo "::error::缺少 CODEBERG_TOKEN"; exit 1
-          fi
+          if [ -z "${CODEBERG_TOKEN:-}" ]; then echo "::error::缺少 CODEBERG_TOKEN"; exit 1; fi
 
-          # 用 credential helper 传密码：不落盘、不拼进 URL，避免出现在日志或 git remote -v 里
           git config --local credential.helper \
             '!f() { echo "username=${CODEBERG_USER}"; echo "password=${CODEBERG_TOKEN}"; }; f'
           git config --local user.name  "登⭐️者"
@@ -48,61 +39,60 @@ jobs:
 
           remote="https://codeberg.org/${CODEBERG_USER}/${CODEBERG_REPO}.git"
           git remote add codeberg "$remote" 2>/dev/null || git remote set-url codeberg "$remote"
-
           git push codeberg "HEAD:refs/heads/main" --force
           git push codeberg --tags --force
-
           git remote remove codeberg || true
           git config --local --unset-all credential.helper || true
 
-      # ---------- 2. Release 说明 + APK（仅打 tag 时） ----------
-      - name: Mirror release to Codeberg
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Sync release (with APK) to Codeberg
         env:
           CODEBERG_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          TAG="${GITHUB_REF_NAME}"
+
+          VERSION=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -1)
+          TAG="v${VERSION}"
+          echo "版本: $VERSION  标签: $TAG"
+
           mkdir -p dist
+          gh release view "$TAG" --repo "$GH_REPO" --json name,body > rel.json 2>/dev/null || echo '{}' > rel.json
+          gh release download "$TAG" --repo "$GH_REPO" --pattern '*.apk' --dir dist 2>/dev/null || true
 
-          gh release view "$TAG" --json body > rel.json 2>/dev/null || echo '{}' > rel.json
-          gh release download "$TAG" --pattern '*.apk' --dir dist 2>/dev/null || true
+          TITLE=$(python3 -c "import json;d=json.load(open('rel.json'));print(d.get('name') or '${TAG}')")
+          BODY=$(python3 -c "import json;d=json.load(open('rel.json'));print(d.get('body') or '')")
 
-          if [ -z "$(ls -A dist 2>/dev/null)" ]; then
-            echo "::notice::tag $TAG 没有 APK 附件，仅同步代码"
-            exit 0
-          fi
-
-          # 查 Codeberg 上是否已有该 release
           REL_ID=$(curl -sS -H "Authorization: token ${CODEBERG_TOKEN}" \
             "${CODEBERG_API}/repos/${CODEBERG_USER}/${CODEBERG_REPO}/releases" \
             | python3 -c "import json,sys;d=json.load(sys.stdin);print(next((str(r['id']) for r in d if r.get('tag_name')=='${TAG}'),''))" 2>/dev/null || true)
 
-          if [ -z "$REL_ID" ]; then
-            echo "在 Codeberg 创建 release $TAG"
-            BODY_JSON=$(python3 -c "import json;print(json.dumps({'tag_name':'${TAG}','name':'${TAG}','body':json.load(open('rel.json')).get('body',''),'draft':False,'prerelease':False}))")
-            REL_ID=$(curl -sS -X POST "${CODEBERG_API}/repos/${CODEBERG_USER}/${CODEBERG_REPO}/releases" \
-              -H "Authorization: token ${CODEBERG_TOKEN}" \
-              -H "Content-Type: application/json" \
-              -d "${BODY_JSON}" \
-              | python3 -c "import json,sys;print(str(json.load(sys.stdin).get('id','')))" 2>/dev/null || true)
+          if [ -n "$REL_ID" ]; then
+            echo "更新已有 release id=$REL_ID"
+            PAYLOAD=$(TITLE="$TITLE" BODY="$BODY" python3 -c "import json,os;print(json.dumps({'name':os.environ['TITLE'],'body':os.environ['BODY']}))")
+            curl -sS -f -X PATCH "${CODEBERG_API}/repos/${CODEBERG_USER}/${CODEBERG_REPO}/releases/${REL_ID}" \
+              -H "Authorization: token ${CODEBERG_TOKEN}" -H "Content-Type: application/json" -d "$PAYLOAD" > /dev/null
           else
-            echo "Codeberg 已存在 release $TAG (id=$REL_ID)"
+            echo "创建 release $TAG"
+            PAYLOAD=$(TAG="$TAG" TITLE="$TITLE" BODY="$BODY" python3 -c "import json,os;print(json.dumps({'tag_name':os.environ['TAG'],'name':os.environ['TITLE'],'body':os.environ['BODY'],'draft':False,'prerelease':False}))")
+            REL_ID=$(curl -sS -f -X POST "${CODEBERG_API}/repos/${CODEBERG_USER}/${CODEBERG_REPO}/releases" \
+              -H "Authorization: token ${CODEBERG_TOKEN}" -H "Content-Type: application/json" -d "$PAYLOAD" \
+              | python3 -c "import json,sys;print(str(json.load(sys.stdin).get('id','')))")
           fi
 
-          if [ -z "$REL_ID" ]; then
-            echo "::error::无法创建/找到 Codeberg release"
-            exit 1
-          fi
+          if [ -z "$REL_ID" ]; then echo "::error::Codeberg release 创建失败"; exit 1; fi
+
+          EXISTING=$(curl -sS -H "Authorization: token ${CODEBERG_TOKEN}" \
+            "${CODEBERG_API}/repos/${CODEBERG_USER}/${CODEBERG_REPO}/releases/${REL_ID}/assets" \
+            | python3 -c "import json,sys;d=json.load(sys.stdin);print(' '.join(a['name'] for a in d))" 2>/dev/null || true)
 
           for f in dist/*.apk; do
+            [ -e "$f" ] || { echo "::notice::没有 APK 可上传"; break; }
             name=$(basename "$f")
+            case " $EXISTING " in *" $name "*) echo "跳过已存在的 $name"; continue;; esac
             echo "上传 $name"
             curl -sS -f -X POST \
               "${CODEBERG_API}/repos/${CODEBERG_USER}/${CODEBERG_REPO}/releases/${REL_ID}/assets?name=${name}" \
-              -H "Authorization: token ${CODEBERG_TOKEN}" \
-              -F "attachment=@${f}" > /dev/null
+              -H "Authorization: token ${CODEBERG_TOKEN}" -F "attachment=@${f}" > /dev/null
           done
 
-          echo "完成：Codeberg release $TAG"
+          echo "完成：$TAG"
