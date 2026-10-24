@@ -1,0 +1,61 @@
+name: Mirror to Codeberg
+
+# 每次推送到 main（以及打 tag、手动触发）时，把仓库镜像到 Codeberg。
+#
+# 为什么绕这一圈：本机/某些网络的出口 IP 被 Codeberg 的 WAF 整段拦截，
+# 而 GitHub Actions 的运行器 IP 不受影响，由它代为推送最省心。
+#
+# 只需要配置一个 Secret：
+#   Settings → Secrets and variables → Actions → New repository secret
+#   名称：CODEBERG_TOKEN
+#   值  ：Codeberg 的 access token（加密存储，日志与网页都不会显示明文）
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: mirror-codeberg
+  cancel-in-progress: false
+
+env:
+  CODEBERG_USER: starclimber
+  CODEBERG_REPO: TinyMCServer
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history + tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push to Codeberg
+        env:
+          CODEBERG_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${CODEBERG_TOKEN:-}" ]; then
+            echo "::error::缺少 CODEBERG_TOKEN，请在 Settings → Secrets and variables → Actions 中配置"
+            exit 1
+          fi
+
+          # 用 credential helper 传密码：不落盘、不拼进 URL，避免出现在日志或 git remote -v 里
+          git config --local credential.helper \
+            '!f() { echo "username=${CODEBERG_USER}"; echo "password=${CODEBERG_TOKEN}"; }; f'
+          git config --local user.name  "登⭐️者"
+          git config --local user.email "288315615+starclimber@users.noreply.github.com"
+
+          remote="https://codeberg.org/${CODEBERG_USER}/${CODEBERG_REPO}.git"
+          git remote add codeberg "$remote" 2>/dev/null || git remote set-url codeberg "$remote"
+
+          # 镜像推送：分支与标签都同步（Codeberg 侧是只读镜像，允许 --force）
+          git push codeberg "HEAD:refs/heads/main" --force
+          git push codeberg --tags --force
+
+          git remote remove codeberg || true
+          git config --local --unset-all credential.helper || true
