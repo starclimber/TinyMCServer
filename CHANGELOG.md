@@ -5,6 +5,39 @@
 
 ---
 
+## [1.3.0] — 2026-10-27
+
+### 新增 / Added
+
+- **frp 内网穿透**：内置 frp 客户端（frpc 0.71.1 arm64），把手机上运行的服务端映射到公网，朋友可以从外网直连。
+  支持**三种配置方式**：图形表单、直接粘贴 TOML、直接粘贴老式 INI。
+  **FRP tunneling**: bundles the frp client (frpc 0.71.1 arm64) so a phone-hosted server can be reached from the internet. Three ways to configure it: a form, raw TOML, or legacy INI.
+- **关联启动**：隧道绑定服务器实例后，该实例进入 RUNNING 时自动拉起 frp，服务器停止或崩溃时自动收尾；未绑定时开关置灰。
+  **Auto-start with the server**: once a tunnel is bound to an instance, frp launches when that instance reaches RUNNING and is torn down when it stops or crashes; the switch stays greyed out until then.
+- **frp 控制台**：点隧道卡片进入，实时日志、启动/停止、清屏、编辑。首页右上角新增入口（设置左边）。
+  **FRP console**: tap a tunnel card for live logs, start/stop, clear and edit. A new entry icon sits at the top-right of the home screen.
+
+### 安全 / Security
+
+- **只映射本机**：无论图形、TOML 还是 INI，本地目标地址一律限制为 `127.0.0.1`。图形模式锁定该值；TOML / INI 在**保存与启动时校验**，不是 `127.0.0.1` 直接拒绝并提示，不静默改写用户配置。
+  **Loopback only**: in all three modes the local target is restricted to `127.0.0.1`. The form locks it; TOML / INI are validated on save and on start and rejected with a hint otherwise — user config is never silently rewritten.
+
+### 修复 / Fixed
+
+- **frp 日志里的颜色控制符**（`[0m[1;34m` 之类）已剥离，判断成功/失败也基于清理后的文本。
+  ANSI color codes in frp logs (`[0m[1;34m` and friends) are stripped; success/failure detection runs on the cleaned text.
+- **状态判断修正**：改为看到 `login to server success` / `start proxy success` 才标记为运行中，启动过程显示「连接中」，不再一启动就报成功。
+  **Correct status detection**: the tunnel is marked running only after `login to server success` / `start proxy success`; the startup phase shows "connecting" instead of claiming success immediately.
+- **点停止误报错误**：主动停止会打断读线程，原来会被当成故障并显示 `read interrupted by close() on another thread`。现在区分「用户主动停止」与「进程意外退出」，主动停止不再报错。
+  **Stop no longer reports an error**: a user-initiated stop interrupts the reader thread, which used to surface as `read interrupted by close() on another thread`. User stops and unexpected exits are now distinguished.
+
+### 变更 / Changed
+
+- 版本号 `1.2.4` → `1.3.0`（versionCode 8）。
+- NOTICE、README、README.en 增加 frp 相关说明与许可声明。
+
+---
+
 ## [1.2.4] — 2026-10-22
 
 ### 安全 / Security
