@@ -37,6 +37,9 @@ import dev.tinymcserver.app.ui.screens.BackupScreen
 import dev.tinymcserver.app.ui.screens.ConsoleScreen
 import dev.tinymcserver.app.ui.screens.CreateWizardScreen
 import dev.tinymcserver.app.ui.screens.FileBrowserScreen
+import dev.tinymcserver.app.ui.screens.FrpConsoleScreen
+import dev.tinymcserver.app.ui.screens.FrpEditScreen
+import dev.tinymcserver.app.ui.screens.FrpScreen
 import dev.tinymcserver.app.ui.screens.InstanceListScreen
 import dev.tinymcserver.app.ui.screens.PlayerManageScreen
 import dev.tinymcserver.app.ui.screens.PluginImportScreen
@@ -109,6 +112,16 @@ fun AppNav() {
             popExitTransition = { ExitTransition.None },
         ) {
             composable("list") { InstanceListScreen(vm, nav) }
+            composable("frp") { FrpScreen(nav) }
+            composable(
+                "frpConsole/{id}",
+                arguments = listOf(navArgument("id") { type = NavType.StringType }),
+            ) { e -> FrpConsoleScreen(nav, e.arguments?.getString("id").orEmpty()) }
+            composable(
+                "frpEdit/{id}",
+                arguments = listOf(navArgument("id") { type = NavType.StringType }),
+            ) { e -> FrpEditScreen(nav, e.arguments?.getString("id")) }
+            composable("frpEdit") { FrpEditScreen(nav, null) }
             composable("wizard") { CreateWizardScreen(vm, nav, null) }
             composable(
                 "wizard/{id}",
