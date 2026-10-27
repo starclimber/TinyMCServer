@@ -24,6 +24,7 @@ import java.io.BufferedWriter
 import java.io.File
 import java.io.OutputStreamWriter
 import java.util.concurrent.ConcurrentHashMap
+import dev.tinymcserver.app.core.frp.FrpAutoStarter
 import dev.tinymcserver.app.core.i18n.t
 
 /** 全局启停入口：按实例 id 管理运行期控制器 */
@@ -190,6 +191,9 @@ class RuntimeController(
             appendLine(t("[Tiny] 进程已启动") + if (pid > 0) " (pid=$pid)" else "")
             _state.value = _state.value.copy(state = InstanceState.RUNNING, pid = pid)
 
+            // 关联启动：拉起绑定本实例的 frp 隧道（失败不影响服务器）
+            runCatching { FrpAutoStarter.onServerStarted(instance.id) }
+
             startMemorySampler(jar.absolutePath)
 
             val reader = proc.inputStream.bufferedReader(Charsets.UTF_8)
@@ -216,6 +220,7 @@ class RuntimeController(
                 players = 0,
                 pid = -1,
             )
+            runCatching { FrpAutoStarter.onServerStopped(instance.id) }
             maybeAutoRestart(code)
         } catch (e: Exception) {
             appendLine(t("[Tiny] 启动失败：%s", e.message))
