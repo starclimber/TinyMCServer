@@ -105,6 +105,12 @@ fun AboutScreen(nav: NavController) {
             Bullet(t("服务端 jar 均从官方或授权源获取，使用须遵守 Minecraft EULA。"))
             Bullet(t("内置 OpenJDK 遵循 GPLv2 + Classpath Exception；完整来源与修改说明见项目 NOTICE。"))
 
+            Section(t("第三方组件"))
+            Bullet(t("frp（内网穿透客户端 frpc），作者 fatedier，MIT License。"))
+            Bullet(t("来源：https://github.com/fatedier/frp，本项目仅做打包分发，未修改源码。"))
+            Bullet(t("完整许可证见 frp 仓库 LICENSE 文件。"))
+            LinkRow("github.com/fatedier/frp", "https://github.com/fatedier/frp")
+
             HorizontalDivider(Modifier.padding(vertical = 12.dp))
             Text(
                 t("本应用为第三方工具，与 Mojang、Microsoft 无关联。"),
