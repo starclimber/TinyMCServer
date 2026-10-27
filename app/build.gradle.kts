@@ -31,8 +31,8 @@ android {
         // 关键：Android 10+ 中 targetSdk>=29 的应用被禁止 exec 私有目录内的文件（W^X）。
         // 内置 JRE 必须从私有目录执行 java，因此保持 targetSdk=28 走兼容域（Termux 同款方案）。
         targetSdk = 28
-        versionCode = 7
-        versionName = "1.2.4"
+        versionCode = 8
+        versionName = "1.3.0"
         vectorDrawables { useSupportLibrary = true }
     }
 
