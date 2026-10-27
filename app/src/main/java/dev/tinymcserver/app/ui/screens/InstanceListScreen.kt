@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Router
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.AlertDialog
@@ -70,6 +71,9 @@ fun InstanceListScreen(vm: AppViewModel, nav: NavController) {
                 actions = {
                     IconButton(onClick = { nav.navigate("skinforge") }) {
                         Icon(Icons.Filled.Face, contentDescription = t("皮肤工坊"))
+                    }
+                    IconButton(onClick = { nav.navigate("frp") }) {
+                        Icon(Icons.Filled.Router, contentDescription = t("frp 内网穿透"))
                     }
                     IconButton(onClick = { nav.navigate("settings") }) {
                         Icon(Icons.Filled.Settings, contentDescription = t("设置"))
