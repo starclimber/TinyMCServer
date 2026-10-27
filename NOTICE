@@ -160,3 +160,49 @@ Tiny MC Server — Third-Party Components and Copyright Notices
   这些请求仅在用户主动操作时发起，受各自服务条款约束。
   These requests are made only at the user's initiative and are governed by
   each service's terms.
+
+
+八、内网穿透客户端 frp（app/src/main/assets/frp/frpc.xz）
+8. FRP Tunneling Client (app/src/main/assets/frp/frpc.xz)
+----------------------------------------------------------
+  名称 / Name:
+    frp (Fast Reverse Proxy) — 客户端组件 frpc
+
+  版本 / Version:
+    0.71.1（linux_arm64 构建）
+
+  作者 / Author:
+    fatedier 及 frp 贡献者 / fatedier and frp contributors
+
+  许可 / License:
+    MIT License
+    Copyright (c) 2016 fatedier, fatedier@gmail.com
+
+  来源 / Origin:
+    https://github.com/fatedier/frp
+    Release: https://github.com/fatedier/frp/releases/tag/v0.71.1
+
+  修改说明 / Modifications:
+    本项目**未修改 frp 源码或二进制**，仅将官方发布的 arm64 静态编译版本
+    以 xz 压缩形式打包进 APK，首次使用时解压到应用私有目录后执行。
+    This project **does not modify frp's source or binary**. The official
+    arm64 static build is bundled in the APK as an xz archive and extracted to
+    the app's private directory on first use.
+
+  使用范围 / Scope of Use:
+    仅作为「把手机上的服务端映射到公网」的内网穿透客户端使用；配置由用户
+    自行填写（图形表单 / TOML / INI 三种方式），本地目标地址限定为
+    127.0.0.1，不代理本机以外的服务。
+    Used only as a tunneling client to expose services running on this phone.
+    Configuration is provided by the user (form / TOML / INI); the local target
+    is restricted to 127.0.0.1, so services outside this device are not proxied.
+
+  MIT License 全文 / Full MIT License text:
+    https://github.com/fatedier/frp/blob/master/LICENSE
+
+  MIT 许可摘要 / Brief summary:
+    允许自由使用、复制、修改、合并、发布、再许可及销售，惟须在副本或实质
+    部分中保留上述版权声明与许可声明；软件按「原样」提供，不作任何担保。
+    Permission is granted to use, copy, modify, merge, publish, distribute,
+    sublicense and sell, provided the copyright and permission notices are
+    retained; the software is provided "as is", without warranty of any kind.
