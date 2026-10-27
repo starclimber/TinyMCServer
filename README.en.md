@@ -18,6 +18,7 @@ It bundles a trimmed OpenJDK runtime so the device can create and run Vanilla, P
 - **Plugin manager**: search and install plugins from Modrinth, with download integrity checks, progress and cancel.
 - **Backups & player management**: back up / restore instances, manage whitelist / OP / ban lists.
 - **Skin Forge**: deterministically generate a 64×64 Minecraft Java skin from a "seed + style", exportable as PNG.
+- **frp tunneling**: expose the phone-hosted server to the internet, configurable via form / TOML / INI, and auto-started together with the server.
 - **Background reliability**: foreground service + WakeLock + WifiLock + battery-optimization whitelist guidance.
 - **Multilingual**: the UI and `server.properties` labels support Chinese / English / Français / Español / Русский; auto-detected on first launch and switchable in Settings.
 - **Hide from recents**: an opt-in setting (off by default) that removes the app from the system recents list.
@@ -92,6 +93,26 @@ To reduce size and keep dependencies clean, the upstream runtime is trimmed and 
 - **`libandroid-spawn`** — provides `posix_spawn` to the JVM (uses the system implementation where available, falling back to a built-in one on older systems).
 
 The sources of both libraries are in [`tools/jrelibs/`](tools/jrelibs/) (GNU Affero General Public License v3.0) and are cross-compiled with Zig.
+
+## frp tunneling
+
+Bundles the [frp](https://github.com/fatedier/frp) client (frpc 0.71.1, arm64) so a server running on this phone can be reached from the internet through a frps host with a public IP.
+
+**Entry point**: the <kbd>router</kbd> icon at the top-right of the home screen (left of Settings).
+
+**Three configuration modes**
+
+| Mode | Description |
+|---|---|
+| Form | Enter server address, port, token, remote port and local port; TOML is generated automatically |
+| TOML | Paste a complete `frpc.toml` |
+| INI | Paste a legacy `frpc.ini` |
+
+**Loopback only**: in every mode the local target is restricted to `127.0.0.1`. The form locks it; in TOML / INI modes it is **validated on save and on start** — if `localIP` / `local_ip` is anything else, the save is rejected with a hint. Your config is never silently rewritten.
+
+**Auto-start together with the server**: bind a tunnel to a server instance and frp is launched when that instance reaches RUNNING, and torn down when it stops or crashes. The switch is greyed out until an instance is bound.
+
+**Console**: tap a tunnel card to open it. Live frpc logs (ANSI color codes stripped), with start / stop / clear / edit. A user-initiated stop is never reported as an error.
 
 ## Architecture
 
