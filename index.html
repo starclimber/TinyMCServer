@@ -41,11 +41,11 @@
   "applicationCategory": "UtilitiesApplication",
   "applicationSubCategory": "Minecraft Server Launcher",
   "operatingSystem": "Android 8.0 (API 26) 及以上",
-  "softwareVersion": "1.2.4",
-  "fileSize": "113.0 MB",
+  "softwareVersion": "1.3.0",
+  "fileSize": "111.7 MB",
   "license": "https://www.gnu.org/licenses/agpl-3.0.html",
   "url": "https://tinymcserver.quest.l.cd/",
-  "downloadUrl": "https://github.com/starclimber/TinyMCServer/releases/download/v1.2.4/TinyMCserver-1.2.4.apk",
+  "downloadUrl": "https://github.com/starclimber/TinyMCServer/releases/download/v1.3.0/TinyMCserver-1.3.0.apk",
   "codeRepository": "https://github.com/starclimber/TinyMCServer",
   "programmingLanguage": "Kotlin",
   "author": {
@@ -234,6 +234,34 @@ footer{border-top:1px solid var(--line);padding:28px 0;font-size:13.5px;color:va
   .cta{flex-direction:column}
   .card{padding:17px}
 }
+
+/* 官方仓库声明条 */
+.notice{
+  margin:24px 0 8px;
+  padding:16px 18px 14px;
+  border:1px solid #3a2f16;
+  border-left:4px solid #d9a521;
+  border-radius:12px;
+  background:linear-gradient(180deg,rgba(217,165,33,.10),rgba(217,165,33,.03));
+}
+.notice-hd{
+  font-weight:700;
+  font-size:15px;
+  color:#e8b93a;
+  margin-bottom:8px;
+  letter-spacing:.02em;
+}
+.notice p{
+  margin:0 0 6px;
+  font-size:14px;
+  line-height:1.65;
+  color:#e8eaed;
+}
+.notice p:last-child{margin-bottom:0}
+.notice a{color:#7cc4ff;text-decoration:none;font-weight:600}
+.notice a:hover{text-decoration:underline}
+.notice-sub{font-size:13px;color:#a8adb5}
+.notice-sub strong{color:#e8b93a;font-weight:600}
 </style>
 </head>
 <body>
@@ -253,17 +281,33 @@ footer{border-top:1px solid var(--line);padding:28px 0;font-size:13.5px;color:va
 
 <main id="top">
 
+<!-- 官方仓库声明 -->
+<div class="wrap">
+  <div class="notice">
+    <div class="notice-hd">⚠️ 官方声明</div>
+    <p>
+      <strong>TinyMCserver 的官方代码仓库仅位于：</strong>
+      <a href="https://github.com/starclimber/TinyMCServer" target="_blank" rel="noopener">GitHub</a>
+      ·
+      <a href="https://codeberg.org/starclimber/TinyMCServer" target="_blank" rel="noopener">Codeberg</a>
+    </p>
+    <p class="notice-sub">
+      其他平台（如 GitCode 等）出现的同名仓库均为<strong>未经授权的自动镜像/搬运</strong>，代码一致性无法保证，请勿在非官方仓库提交 Issue 或 PR。
+    </p>
+  </div>
+</div>
+
 <!-- Hero -->
 <div class="wrap hero">
-  <span class="badge">● v1.2.2 · 开源免费</span>
+  <span class="badge">● v1.3.0 · 开源免费</span>
   <h1>在手机上跑 <span class="g">Minecraft Java 版</span><br>服务端</h1>
   <p class="sub">
     内置精简后的 OpenJDK 运行时，可让 Android 设备直接创建并运行
     Vanilla、Paper、Purpur、Folia 服务端 —— 不需要 root，不依赖 Termux，也不涉及任何客户端渲染。
   </p>
   <div class="cta">
-    <a class="btn btn-p" href="https://github.com/starclimber/TinyMCServer/releases/download/v1.2.4/TinyMCserver-1.2.4.apk">
-      ↓ 下载 APK（113.0 MB）
+    <a class="btn btn-p" href="https://github.com/starclimber/TinyMCServer/releases/download/v1.3.0/TinyMCserver-1.3.0.apk">
+      ↓ 下载 APK（111.7 MB）
     </a>
     <a class="btn btn-s" href="https://github.com/starclimber/TinyMCServer">查看源码</a>
   </div>
@@ -466,8 +510,8 @@ footer{border-top:1px solid var(--line);padding:28px 0;font-size:13.5px;color:va
   <h2 style="margin-bottom:10px">现在就在手机上开一局</h2>
   <p class="lead" style="margin-bottom:24px">下载 APK，四步建服，把世界装进口袋。</p>
   <div class="cta">
-    <a class="btn btn-p" href="https://github.com/starclimber/TinyMCServer/releases/download/v1.2.4/TinyMCserver-1.2.4.apk">
-      ↓ 下载 v1.2.4 APK
+    <a class="btn btn-p" href="https://github.com/starclimber/TinyMCServer/releases/download/v1.3.0/TinyMCserver-1.3.0.apk">
+      ↓ 下载 v1.3.0 APK
     </a>
     <a class="btn btn-s" href="https://github.com/starclimber/TinyMCServer/releases">所有版本</a>
   </div>
