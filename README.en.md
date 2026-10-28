@@ -120,7 +120,7 @@ Bundles the [frp](https://github.com/fatedier/frp) client (frpc 0.71.1, arm64) s
 
 **Auto-start together with the server**: bind a tunnel to a server instance and frp is launched when that instance reaches RUNNING, and torn down when it stops or crashes. The switch is greyed out until an instance is bound.
 
-**Console**: tap a tunnel card to open it. Live frpc logs (ANSI color codes stripped), with start / stop / clear / edit. A user-initiated stop is never reported as an error.
+**Console**: tap a tunnel card to open it. Live frpc logs (ANSI color codes stripped), with start / stop / clear / edit.
 
 ## Architecture
 
