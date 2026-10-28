@@ -8,6 +8,14 @@ It bundles a trimmed OpenJDK runtime so the device can create and run Vanilla, P
 
 **English** | [简体中文](README.md)
 
+> ## ⚠️ Official Notice
+>
+> **TinyMCserver's official repositories are:**
+> - GitHub: <https://github.com/starclimber/TinyMCServer>
+> - Codeberg: <https://codeberg.org/starclimber/TinyMCServer>
+>
+> Repositories with the same name on other platforms (e.g. GitCode) are **unauthorized automatic mirrors / re-uploads**. Code integrity cannot be guaranteed — please do not file issues or pull requests there.
+
 ---
 
 ## Features
