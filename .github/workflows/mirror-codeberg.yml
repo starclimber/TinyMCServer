@@ -1,4 +1,4 @@
-name: Mirror to Codeberg
+name: Mirror to Codeberg and Gitea
 
 on:
   push:
@@ -7,13 +7,16 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: mirror-codeberg
+  group: mirror-remotes
   cancel-in-progress: false
 
 env:
   CODEBERG_USER: starclimber
   CODEBERG_REPO: TinyMCServer
   CODEBERG_API: https://codeberg.org/api/v1
+  GITEA_USER: starclimber
+  GITEA_REPO: TinyMCServer
+  GITEA_API: https://gitea.com/api/v1
   GH_REPO: starclimber/TinyMCServer
 
 jobs:
@@ -44,55 +47,40 @@ jobs:
           git remote remove codeberg || true
           git config --local --unset-all credential.helper || true
 
+      - name: Push code and tags to Gitea
+        env:
+          GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GITEA_TOKEN:-}" ]; then echo "::warning::缺少 GITEA_TOKEN，跳过 Gitea"; exit 0; fi
+
+          git config --local credential.helper \
+            '!f() { echo "username=${GITEA_USER}"; echo "password=${GITEA_TOKEN}"; }; f'
+          git config --local user.name  "登⭐️者"
+          git config --local user.email "288315615+starclimber@users.noreply.github.com"
+
+          remote="https://gitea.com/${GITEA_USER}/${GITEA_REPO}.git"
+          git remote add gitea "$remote" 2>/dev/null || git remote set-url gitea "$remote"
+          git push gitea "HEAD:refs/heads/main" --force
+          git push gitea --tags --force
+          git remote remove gitea || true
+          git config --local --unset-all credential.helper || true
+
       - name: Sync release (with APK) to Codeberg
         env:
           CODEBERG_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+          bash .github/scripts/sync-release.sh \
+            "$CODEBERG_API" "$CODEBERG_USER" "$CODEBERG_REPO" "$CODEBERG_TOKEN"
 
-          VERSION=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -1)
-          TAG="v${VERSION}"
-          echo "版本: $VERSION  标签: $TAG"
-
-          mkdir -p dist
-          gh release view "$TAG" --repo "$GH_REPO" --json name,body > rel.json 2>/dev/null || echo '{}' > rel.json
-          gh release download "$TAG" --repo "$GH_REPO" --pattern '*.apk' --dir dist 2>/dev/null || true
-
-          TITLE=$(python3 -c "import json;d=json.load(open('rel.json'));print(d.get('name') or '${TAG}')")
-          BODY=$(python3 -c "import json;d=json.load(open('rel.json'));print(d.get('body') or '')")
-
-          REL_ID=$(curl -sS -H "Authorization: token ${CODEBERG_TOKEN}" \
-            "${CODEBERG_API}/repos/${CODEBERG_USER}/${CODEBERG_REPO}/releases" \
-            | python3 -c "import json,sys;d=json.load(sys.stdin);print(next((str(r['id']) for r in d if r.get('tag_name')=='${TAG}'),''))" 2>/dev/null || true)
-
-          if [ -n "$REL_ID" ]; then
-            echo "更新已有 release id=$REL_ID"
-            PAYLOAD=$(TITLE="$TITLE" BODY="$BODY" python3 -c "import json,os;print(json.dumps({'name':os.environ['TITLE'],'body':os.environ['BODY']}))")
-            curl -sS -f -X PATCH "${CODEBERG_API}/repos/${CODEBERG_USER}/${CODEBERG_REPO}/releases/${REL_ID}" \
-              -H "Authorization: token ${CODEBERG_TOKEN}" -H "Content-Type: application/json" -d "$PAYLOAD" > /dev/null
-          else
-            echo "创建 release $TAG"
-            PAYLOAD=$(TAG="$TAG" TITLE="$TITLE" BODY="$BODY" python3 -c "import json,os;print(json.dumps({'tag_name':os.environ['TAG'],'name':os.environ['TITLE'],'body':os.environ['BODY'],'draft':False,'prerelease':False}))")
-            REL_ID=$(curl -sS -f -X POST "${CODEBERG_API}/repos/${CODEBERG_USER}/${CODEBERG_REPO}/releases" \
-              -H "Authorization: token ${CODEBERG_TOKEN}" -H "Content-Type: application/json" -d "$PAYLOAD" \
-              | python3 -c "import json,sys;print(str(json.load(sys.stdin).get('id','')))")
-          fi
-
-          if [ -z "$REL_ID" ]; then echo "::error::Codeberg release 创建失败"; exit 1; fi
-
-          EXISTING=$(curl -sS -H "Authorization: token ${CODEBERG_TOKEN}" \
-            "${CODEBERG_API}/repos/${CODEBERG_USER}/${CODEBERG_REPO}/releases/${REL_ID}/assets" \
-            | python3 -c "import json,sys;d=json.load(sys.stdin);print(' '.join(a['name'] for a in d))" 2>/dev/null || true)
-
-          for f in dist/*.apk; do
-            [ -e "$f" ] || { echo "::notice::没有 APK 可上传"; break; }
-            name=$(basename "$f")
-            case " $EXISTING " in *" $name "*) echo "跳过已存在的 $name"; continue;; esac
-            echo "上传 $name"
-            curl -sS -f -X POST \
-              "${CODEBERG_API}/repos/${CODEBERG_USER}/${CODEBERG_REPO}/releases/${REL_ID}/assets?name=${name}" \
-              -H "Authorization: token ${CODEBERG_TOKEN}" -F "attachment=@${f}" > /dev/null
-          done
-
-          echo "完成：$TAG"
+      - name: Sync release (with APK) to Gitea
+        env:
+          GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GITEA_TOKEN:-}" ]; then echo "::warning::缺少 GITEA_TOKEN，跳过 Gitea"; exit 0; fi
+          bash .github/scripts/sync-release.sh \
+            "$GITEA_API" "$GITEA_USER" "$GITEA_REPO" "$GITEA_TOKEN"
