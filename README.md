@@ -14,6 +14,7 @@
 > **TinyMCserver 的官方代码仓库仅位于：**
 > - GitHub：<https://github.com/starclimber/TinyMCServer>
 > - Codeberg：<https://codeberg.org/starclimber/TinyMCServer>
+> - Gitea：<https://gitea.com/starclimber/TinyMCServer>
 >
 > 其他平台（如 GitCode 等）出现的同名仓库均为**未经授权的自动镜像/搬运**，代码一致性无法保证，请勿在非官方仓库提交 Issue 或 PR。
 
