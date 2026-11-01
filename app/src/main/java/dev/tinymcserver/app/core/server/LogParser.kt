@@ -34,6 +34,27 @@ object LogParser {
             line.contains("Exception") || line.contains("Caused by:") ||
             line.contains("SEVERE")
 
+    /**
+     * Android 环境固有告警，共三类：
+     *  1. 服务端自带的 JNA 是 glibc 版，在 bionic 上加载失败（libc.so.6 not found）；
+     *  2. oshi 读不到 Android 上受限或不存在的系统文件（/proc/stat、/etc/os-release 等）；
+     *  3. jline 提示终端能力不可用。
+     * 都不影响服务器运行，控制台折叠显示，原文另存到实例的 logs/android-noise.log。
+     */
+    private val androidNoiseRe = Regex(
+        "oshi\\.|com\\.sun\\.jna|jnidispatch|jna\\d*\\.tmp|libc\\.so\\.6|" +
+            "Did not (?:initialize )?JNA|CrashReport preload thread|" +
+            "not found or not readable: /(?:proc|etc)/|libudev|" +
+            "Advanced terminal features are not available"
+    )
+
+    /** 异常堆栈的续行（缩进的 at / Caused by / ... N more / Suppressed） */
+    private val stackLineRe = Regex("""^\s+(?:at |\.\.\. |Caused by:|Suppressed:)|^Caused by:""")
+
+    fun isAndroidNativeNoise(line: String): Boolean = androidNoiseRe.containsMatchIn(line)
+
+    fun isStackTraceLine(line: String): Boolean = stackLineRe.containsMatchIn(line)
+
     fun severity(line: String): Severity = when {
         isOom(line) -> Severity.ERROR
         isError(line) -> Severity.ERROR

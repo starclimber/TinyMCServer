@@ -12,6 +12,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentHashMap
 import org.tukaani.xz.XZInputStream
 
@@ -49,9 +53,33 @@ object FrpManager {
     private val ANSI = Regex("""\u001B\[[0-9;?]*[A-Za-z]""")
 
     private fun appendLog(id: String, rawLine: String) {
-        val line = rawLine.replace(ANSI, "").trimEnd()
+        val line = localizeTimestamp(rawLine.replace(ANSI, "")).trimEnd()
         if (line.isBlank()) return
         update(id) { it.copy(log = (it.log + line).takeLast(600)) }
+    }
+
+    /**
+     * frpc 是 Go 程序，Android 上没有 `/etc/localtime`，它恒定按 UTC 输出时间戳。
+     * 这里把行首的 UTC 时间换成设备本地时间（按系统时区换算，夏令时也正确），
+     * 不依赖设备上是否存在 zoneinfo 文件。
+     */
+    private val tsRe = Regex("""^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,9}))?""")
+    private val tsFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
+
+    private fun localizeTimestamp(line: String): String {
+        val m = tsRe.find(line) ?: return line
+        val g = m.groupValues
+        return try {
+            val nanos = g[7].ifEmpty { "0" }.padEnd(9, '0').take(9).toInt()
+            val utc = LocalDateTime.of(
+                g[1].toInt(), g[2].toInt(), g[3].toInt(),
+                g[4].toInt(), g[5].toInt(), g[6].toInt(), nanos,
+            )
+            val local = utc.atZone(ZoneOffset.UTC).withZoneSameInstant(ZoneId.systemDefault())
+            line.replaceRange(m.range, local.format(tsFmt))
+        } catch (e: Exception) {
+            line
+        }
     }
 
     // ---------------- 二进制准备 ----------------
@@ -166,6 +194,10 @@ object FrpManager {
                 pb.redirectErrorStream(true)
                 pb.environment()["HOME"] = cfgDir.absolutePath
                 pb.environment()["TMPDIR"] = ctx.cacheDir.absolutePath
+                // frpc 是 Go 程序，Android 上没有 /etc/localtime，取不到时区就按 UTC 打日志。
+                // 这里显式固定 UTC，再由 localizeTimestamp 把时间戳换成设备本地时间——
+                // 这样换到任何时区（含夏令时）都准确，也不依赖设备上有没有 zoneinfo 文件。
+                pb.environment()["TZ"] = ""
 
                 val p = pb.start()
                 processes[tunnel.id] = p

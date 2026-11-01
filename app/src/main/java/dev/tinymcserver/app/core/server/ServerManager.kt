@@ -9,6 +9,7 @@ import dev.tinymcserver.app.core.storage.EulaManager
 import dev.tinymcserver.app.core.storage.Paths
 import dev.tinymcserver.app.core.storage.ServerProperties
 import dev.tinymcserver.app.core.util.ProcessUtil
+import dev.tinymcserver.app.core.util.Timezones
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -70,6 +71,10 @@ class RuntimeController(
     private var memJob: Job? = null
     private var userStop = false
     private var restartCount = 0
+
+    /** 是否正处于「Android 环境固有告警」的折叠状态（glibc 版 JNA / oshi 降级） */
+    private var noiseSuppressing = false
+    private var noiseSuppressed = 0
 
     val dir: File get() = Paths.instanceDir(appCtx, instance.id)
     val jar: File get() = File(dir, instance.jarFile)
@@ -155,11 +160,16 @@ class RuntimeController(
             ServerProperties.applyConfig(propertiesFile, instance.config)
             File(dir, "tmp").mkdirs()
 
+            // 服务端自带的 JNA 是 glibc 版，在 Android 上一定加载失败（找不到 libc.so.6）；
+            // 换成 bionic 版后 oshi 才能正常初始化，控制台不再刷那串红字。
+            val jnaDir = JnaCompat.prepare(appCtx.assets, dir)
+
             _state.value = _state.value.copy(
                 state = InstanceState.STARTING,
                 startedAt = System.currentTimeMillis(),
             )
             appendLine(t("[Tiny] 使用 JRE %s 启动：%s %s", major, instance.config.type.display, instance.config.mcVersion))
+            if (jnaDir != null) appendLine(t("[Tiny] 已为服务端启用 Android 版 JNA 原生库"))
 
             val args = LaunchArgs.build(jreHome, instance.config, dir, jar)
             appendLine(t("[Tiny] 启动参数: ") + args.drop(1).joinToString(" "))
@@ -183,6 +193,8 @@ class RuntimeController(
                 // 而 JVM 与其原生依赖（含 JIT 相关的内存/临时文件逻辑）会用到它们。
                 env["HOME"] = dir.absolutePath
                 env["TMPDIR"] = File(dir, "tmp").absolutePath
+                // 与 -Duser.timezone 双保险：让插件/原生库也拿到正确的本地时区
+                env["TZ"] = Timezones.tzEnvValue()
             }
             val proc = pb.start()
             process = proc
@@ -203,6 +215,7 @@ class RuntimeController(
             }
             val code = proc.waitFor()
             memJob?.cancel()
+            flushNoise()
             appendLine(
                 t("[Tiny] 进程退出，返回码 %s", code) +
                     if (code != 0) "（${CrashDiagnostics.explain(code)}）" else ""
@@ -283,16 +296,54 @@ class RuntimeController(
     }
 
     private fun handleLine(line: String) {
+        // Android 环境固有告警（glibc 版 JNA / oshi 降级）：原文写进 logs/android-noise.log，
+        // 控制台只留一行提示，避免整屏红字掩盖真正的问题。
+        if (noiseSuppressing) {
+            if (LogParser.isStackTraceLine(line)) {
+                noiseSuppressed++
+                appendNoiseFile(line)
+                return
+            }
+            noiseSuppressing = false
+        }
+        if (LogParser.isAndroidNativeNoise(line)) {
+            noiseSuppressing = true
+            noiseSuppressed++
+            appendNoiseFile(line)
+            return
+        }
         appendLine(line)
         LogParser.playersOnline(line)?.let { (n, max) ->
             _state.value = _state.value.copy(players = n, maxPlayers = max)
         }
         when {
             LogParser.isOom(line) -> appendLocal(t("检测到内存溢出(OOM)，建议提高 Xmx 或降低视距"))
-            LogParser.isReady(line) -> appendLocal(t("服务端已就绪"))
+            LogParser.isReady(line) -> {
+                // 启动阶段的固有告警此时统一收尾，只留一行提示
+                flushNoise()
+                appendLocal(t("服务端已就绪"))
+            }
         }
         if (_state.value.state == InstanceState.STARTING && LogParser.isReady(line)) {
             _state.value = _state.value.copy(state = InstanceState.RUNNING)
+        }
+    }
+
+    /** 结束一段被折叠的告警，补一行提示 */
+    private fun flushNoise() {
+        noiseSuppressing = false
+        if (noiseSuppressed > 0) {
+            appendLine(t("[Tiny] 已忽略 %s 行 Android 环境固有告警（oshi 读取系统信息受限，不影响运行；原文见 logs/android-noise.log）", noiseSuppressed))
+            noiseSuppressed = 0
+        }
+    }
+
+    /** 被折叠的告警原文仍然留档，供排查时查看 */
+    private fun appendNoiseFile(line: String) {
+        runCatching {
+            val f = File(dir, "logs/android-noise.log")
+            f.parentFile?.mkdirs()
+            f.appendText(line + "\n")
         }
     }
 

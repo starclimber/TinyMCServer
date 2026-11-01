@@ -5,6 +5,23 @@
 
 ---
 
+## [1.3.1] — 2026-11-01
+
+### 修复 / Fixed
+
+- **启动时那串 JNA / oshi 红字不再出现**：Paper / Purpur / Folia 等服务端会通过 oshi 采集硬件信息，而它们自带的 JNA 原生库是桌面 Linux（glibc）版本，在 Android 上找不到 `libc.so.6`，控制台因此刷出 `Did not JNA classes…`、`dlopen failed: library "libc.so.6" not found`、`Could not initialize class com.sun.jna.Native` 等一大段红色报错。现在启动前会为实例准备好 Android 版本的 JNA 原生库，并让服务端优先加载它，oshi 能正常初始化，这段报错随之消失，硬件信息也恢复可用。
+  **No more JNA / oshi error spam at startup**: Paper / Purpur / Folia collect hardware info through oshi, whose bundled JNA native library is built for desktop Linux (glibc) and fails to load on Android (`libc.so.6` not found) — producing a wall of red errors. The Android build of the JNA native library is now prepared for each instance and loaded first, so oshi initialises normally, the errors are gone and hardware info works again.
+- **日志时间戳改为设备本地时区**：Android 上没有 `/etc/localtime`，服务端进程和 frp 客户端都取不到系统时区，日志时间一律按 UTC 打印——中国差 8 小时、欧美差 1~2 小时，看日志判断「什么时候出的问题」很容易看错。现在服务端控制台与 frp 控制台显示的都是设备本地时间，换到其他时区的设备、或遇到夏令时切换都自动跟随，不需要任何设置。
+  **Log timestamps follow the device time zone**: Android has no `/etc/localtime`, so both the server process and the frp client fell back to UTC — 8 hours off in China, 1–2 hours off in Europe/US, making it easy to misread when something happened. The server console and the frp console now show the device's local time, following the local zone automatically on devices elsewhere and across daylight-saving switches, with no configuration needed.
+- **其余环境告警同样不再刷屏**：Android 上还有一些绕不开的系统限制 —— oshi 读不到 `/proc/stat`、`/etc/os-release` 这类被 SELinux 限制或根本不存在的文件，jline 也会提示终端能力不可用。这些告警会和 JNA 相关的告警一起，在服务器就绪时汇总成一行提示，原文仍保存在实例目录的 `logs/android-noise.log` 里，不再用红色盖住真正需要关注的错误。
+  **Other environment warnings no longer flood the console**: some limits cannot be worked around on Android — oshi cannot read files such as `/proc/stat` or `/etc/os-release` (blocked by SELinux or simply absent), and jline reports that advanced terminal features are unavailable. These warnings, along with the JNA ones, are summarised into a single line once the server is ready, while the original text is kept in `logs/android-noise.log`, so real errors are no longer buried in red.
+
+### 变更 / Changed
+
+- 版本号 `1.3.0` → `1.3.1`（versionCode 9）。
+
+---
+
 ## [1.3.0] — 2026-10-27
 
 ### 新增 / Added

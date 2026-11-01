@@ -364,6 +364,8 @@ internal val FR_TABLE: Map<String, String> = mapOf(
     "服务端 jar 下载完成" to "Téléchargement du jar du serveur terminé",
     "服务端 jar 均从官方或授权源获取，使用须遵守 Minecraft EULA。" to "Les jars du serveur proviennent tous de sources officielles ou autorisées, leur utilisation est soumise à l'EULA de Minecraft.",
     "服务端已就绪" to "Serveur prêt",
+    "[Tiny] 已为服务端启用 Android 版 JNA 原生库" to "[Tiny] Bibliothèque native JNA (version Android) activée pour ce serveur",
+    "[Tiny] 已忽略 %s 行 Android 环境固有告警（oshi 读取系统信息受限，不影响运行；原文见 logs/android-noise.log）" to "[Tiny] %s avertissements inhérents à l'environnement Android ignorés (oshi ne peut pas lire certains fichiers système ; le serveur n'est pas affecté ; texte brut dans logs/android-noise.log)",
     "服务端文件校验失败（%s 不匹配），已删除，请重试" to "Échec de la vérification du serveur (%s ne correspond pas) ; le fichier a été supprimé. Veuillez réessayer.",
     "服务端未下载（%s %s）" to "Serveur non téléchargé (%s %s)",
     "服务端类型" to "Type de serveur",

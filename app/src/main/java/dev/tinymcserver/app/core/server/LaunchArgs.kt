@@ -3,6 +3,7 @@ package dev.tinymcserver.app.core.server
 import dev.tinymcserver.app.core.model.GcPreset
 import dev.tinymcserver.app.core.model.InstanceConfig
 import dev.tinymcserver.app.core.model.ServerType
+import dev.tinymcserver.app.core.util.Timezones
 import java.io.File
 
 /**
@@ -28,6 +29,9 @@ object LaunchArgs {
         // ---------- Android 平台适配 ----------
         args += "-Dfile.encoding=UTF-8"
         args += "-Djava.awt.headless=true"
+        // Android 没有 /etc/localtime，JVM 取不到系统时区会退化为 UTC，日志时间戳全差几个小时。
+        // 这里按设备当前时区显式指定（JRE 自带 tzdb，夏令时也正确）。
+        args += "-Duser.timezone=${Timezones.deviceId()}"
         args += "-Djava.io.tmpdir=${tmp.absolutePath}"
         // FCL 同款：把 user.home 指到可写目录（Android 上默认是 /data，不可写）
         args += "-Duser.home=${instanceDir.absolutePath}"
@@ -35,6 +39,12 @@ object LaunchArgs {
         args += "-XX:+PerfDisableSharedMem"
         // 关键：崩溃报告直接写进实例目录，否则默认落在工作目录/未知位置
         args += "-XX:ErrorFile=${File(instanceDir, "hs_err_%p.log").absolutePath}"
+        // 服务端自带的 JNA 是 glibc 版，Android 上一定加载失败；若实例目录里有 bionic 版
+        // jnidispatch（由 JnaCompat 准备），让它优先被加载，oshi 才能正常工作。
+        val jnaLib = File(instanceDir, "jna/libjnidispatch.so")
+        if (jnaLib.isFile) {
+            args += "-Djna.boot.library.path=${jnaLib.parentFile.absolutePath}"
+        }
 
         // ---------- GC 预设 ----------
         when (cfg.preset) {
