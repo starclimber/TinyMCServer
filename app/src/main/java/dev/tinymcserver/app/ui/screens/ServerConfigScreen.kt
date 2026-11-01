@@ -24,6 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -36,7 +37,6 @@ import dev.tinymcserver.app.core.storage.ServerProperties
 import dev.tinymcserver.app.ui.AppViewModel
 import dev.tinymcserver.app.ui.components.LabeledField
 import java.io.File
-import java.util.LinkedHashMap
 import dev.tinymcserver.app.core.i18n.t
 
 /**
@@ -56,7 +56,6 @@ fun ServerConfigScreen(vm: AppViewModel, nav: NavController, id: String) {
     }
     val root = Paths.instanceDir(ctx, id)
     var tab by remember { mutableIntStateOf(0) }
-    var refresh by remember { mutableIntStateOf(0) }
 
     Scaffold(
         topBar = {
@@ -77,8 +76,8 @@ fun ServerConfigScreen(vm: AppViewModel, nav: NavController, id: String) {
                 }
             }
             when (tab) {
-                0 -> PropertiesEditor(File(root, "server.properties")) { refresh++ }
-                else -> RawEditor(File(root, "server.properties")) { refresh++ }
+                0 -> PropertiesEditor(File(root, "server.properties")) {}
+                else -> RawEditor(File(root, "server.properties")) {}
             }
         }
     }
@@ -93,9 +92,12 @@ fun ServerConfigScreen(vm: AppViewModel, nav: NavController, id: String) {
  */
 @Composable
 private fun PropertiesEditor(file: File, onSaved: () -> Unit) {
-    var map by remember { mutableStateOf(LinkedHashMap<String, String>()) }
+    // 必须是 SnapshotStateMap：往普通 LinkedHashMap 里赋值不会改变 state 的引用，
+    // 也就不会触发重组，输入框会一直显示旧值（表现为删不掉、也写不进去）。
+    val map = remember { mutableStateMapOf<String, String>() }
     LaunchedEffect(file.path) {
-        map = if (file.exists()) ServerProperties.parse(file.readText()) else LinkedHashMap()
+        map.clear()
+        if (file.exists()) map.putAll(ServerProperties.parse(file.readText()))
     }
     // 是否需要在括号里附原始键名（按实际显示名判断，而不是按语言硬编码）
     fun needsRawKey(key: String): Boolean {

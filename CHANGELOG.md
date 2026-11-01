@@ -5,6 +5,19 @@
 
 ---
 
+## [1.3.2] — 2026-11-01
+
+### 修复 / Fixed
+
+- **「配置 → 服务器属性」里的值改不动**：清空某一项或改掉原有内容时，输入框会立刻弹回原来的值，删不掉也写不进去，改完点保存等于没改。现在每一项的输入会即时生效，改完点「保存 server.properties」即写入文件。
+  **Values in "Config → Server properties" could not be edited**: clearing an item or typing over the existing content made the field snap back to the old value — edits could not be made or saved. Typing now takes effect immediately, and "Save server.properties" writes the result to the file.
+
+### 变更 / Changed
+
+- 版本号 `1.3.1` → `1.3.2`（versionCode 10）。
+
+---
+
 ## [1.3.1] — 2026-11-01
 
 ### 修复 / Fixed
