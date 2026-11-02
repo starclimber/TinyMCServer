@@ -5,6 +5,19 @@
 
 ---
 
+## [1.3.3] — 2026-11-02
+
+### 新增 / Added
+
+- **服务器图标**：在「新建服务器」向导里就能选一张图，创建时自动居中裁成 64×64 的 PNG 写到实例根目录的 `server-icon.png` —— 玩家在客户端服务器列表里看到的就是它，不用再自己去文件管理里放图。已建好的实例可以在「配置」页顶部随时更换或移除图标；实例列表里每台服务器也会显示自己的图标。图标在服务端启动时读入，更换后需要重启服务端才会在客户端生效。
+  **Server icon**: pick an image right in the "New server" wizard; it is centre-cropped to a 64×64 PNG and written to `server-icon.png` in the instance folder — exactly what players see in their client's server list, no manual file handling needed. Existing instances can change or remove the icon at the top of the "Config" screen, and the instance list now shows each server's own icon. The icon is read when the server starts, so restart it after a change for clients to pick it up.
+
+### 变更 / Changed
+
+- 版本号 `1.3.2` → `1.3.3`（versionCode 11）。
+
+---
+
 ## [1.3.2] — 2026-11-01
 
 ### 修复 / Fixed

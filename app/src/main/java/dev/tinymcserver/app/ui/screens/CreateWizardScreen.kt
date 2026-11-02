@@ -1,12 +1,17 @@
 package dev.tinymcserver.app.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -29,6 +34,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -44,12 +50,15 @@ import dev.tinymcserver.app.core.server.VersionUtil
 import dev.tinymcserver.app.core.storage.EulaManager
 import dev.tinymcserver.app.core.storage.InstanceStore
 import dev.tinymcserver.app.core.storage.Paths
+import dev.tinymcserver.app.core.util.ServerIcon
 import dev.tinymcserver.app.ui.AppViewModel
 import dev.tinymcserver.app.ui.components.FieldCard
+import dev.tinymcserver.app.ui.components.InstanceIcon
 import dev.tinymcserver.app.ui.components.IntStepper
 import dev.tinymcserver.app.ui.components.LabeledField
 import dev.tinymcserver.app.ui.components.SectionTitle
 import dev.tinymcserver.app.core.i18n.t
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,6 +85,12 @@ fun CreateWizardScreen(vm: AppViewModel, nav: NavController, editId: String?) {
     var autoRestart by remember { mutableStateOf(base.autoRestart) }
     var foliaThreads by remember { mutableStateOf(base.foliaRegionThreads) }
 
+    // 服务器图标：选中后先存到 cache 目录做预览，保存实例时再落到实例目录的 server-icon.png
+    // 单独取出目录：FieldCard 的 lambda 里对 existing 做智能转换是不允许的
+    val existingDir: File? = existing?.let { Paths.instanceDir(ctx, it.id) }
+    var pendingIcon by remember { mutableStateOf<File?>(null) }
+    var iconTick by remember { mutableIntStateOf(0) }
+
     var versions by remember { mutableStateOf<List<String>>(emptyList()) }
     var loadingVersions by remember { mutableStateOf(false) }
     var versionError by remember { mutableStateOf<String?>(null) }
@@ -86,6 +101,18 @@ fun CreateWizardScreen(vm: AppViewModel, nav: NavController, editId: String?) {
     val autoJre = if (mcVersion.isBlank()) base.jreMajor else (VersionUtil.recommendJre(mcVersion)?.major ?: 0)
     val jreSupported = VersionUtil.isSupported(mcVersion)
     val effectiveJre = (if (jreAutoOverride) jreManual else autoJre).takeIf { it > 0 } ?: 21
+
+    val iconPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            val tmp = File(ctx.cacheDir, "picked_server_icon.png")
+            if (ServerIcon.importTo(ctx, uri, tmp)) {
+                pendingIcon = tmp
+                iconTick++
+            } else {
+                vm.toast(t("图片处理失败"))
+            }
+        }
+    }
 
     // 版本列表加载：失败时记录原因供界面展示；「重试」会强制绕过缓存重新请求。
     LaunchedEffect(type, versionReload) {
@@ -158,6 +185,34 @@ fun CreateWizardScreen(vm: AppViewModel, nav: NavController, editId: String?) {
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
+                }
+            }
+
+            SectionTitle(t("服务器图标"))
+            FieldCard {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val instDir = existingDir ?: File(ctx.cacheDir, "no_instance")
+                    InstanceIcon(instDir, size = 56.dp, preview = pendingIcon, refreshKey = iconTick)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(t("玩家在服务器列表里看到的图标"), style = MaterialTheme.typography.bodySmall)
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            t("建议用正方形图片，会自动裁成 64×64"),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    TextButton(onClick = { iconPicker.launch("image/*") }) { Text(t("选择图片")) }
+                }
+                val hasIcon = existingDir?.let { ServerIcon.exists(it) } == true
+                if (pendingIcon == null && hasIcon) {
+                    TextButton(onClick = {
+                        if (existingDir?.let { ServerIcon.remove(it) } == true) {
+                            iconTick++
+                            vm.toast(t("已移除图标"))
+                        }
+                    }) { Text(t("移除图标")) }
                 }
             }
 
@@ -264,6 +319,7 @@ fun CreateWizardScreen(vm: AppViewModel, nav: NavController, editId: String?) {
                             createdAt = System.currentTimeMillis(),
                         )
                         vm.createInstance(inst, acceptEula = true)
+                        pendingIcon?.let { ServerIcon.install(it, Paths.instanceDir(ctx, inst.id)) }
                         // 创建即下载：先解压匹配的 JRE，再从官方源下载服务端 jar
                         vm.prepareInstance(inst) { ok ->
                             vm.toast(
@@ -277,6 +333,7 @@ fun CreateWizardScreen(vm: AppViewModel, nav: NavController, editId: String?) {
                         return@Button
                     } else {
                         vm.saveInstance(existing.copy(config = cfg))
+                        pendingIcon?.let { ServerIcon.install(it, Paths.instanceDir(ctx, existing.id)) }
                         if (eulaAccepted) EulaManager.accept(Paths.instanceDir(ctx, existing.id))
                         vm.toast(t("已保存"))
                     }

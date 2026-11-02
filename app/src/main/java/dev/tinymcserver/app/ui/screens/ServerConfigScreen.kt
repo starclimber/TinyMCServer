@@ -1,9 +1,14 @@
 package dev.tinymcserver.app.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -18,6 +23,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,13 +34,16 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import dev.tinymcserver.app.core.storage.Paths
 import dev.tinymcserver.app.core.storage.ServerProperties
+import dev.tinymcserver.app.core.util.ServerIcon
 import dev.tinymcserver.app.ui.AppViewModel
+import dev.tinymcserver.app.ui.components.InstanceIcon
 import dev.tinymcserver.app.ui.components.LabeledField
 import java.io.File
 import dev.tinymcserver.app.core.i18n.t
@@ -70,6 +79,7 @@ fun ServerConfigScreen(vm: AppViewModel, nav: NavController, id: String) {
         },
     ) { pad ->
         Column(Modifier.fillMaxSize().padding(pad)) {
+            IconBar(vm, root)
             TabRow(selectedTabIndex = tab) {
                 listOf(t("服务器属性"), t("原始编辑")).forEachIndexed { i, label ->
                     Tab(selected = tab == i, onClick = { tab = i }, text = { Text(label) })
@@ -152,5 +162,57 @@ private fun RawEditor(file: File, onSaved: () -> Unit) {
             onClick = { file.writeText(text); onSaved() },
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
         ) { Text(t("保存")) }
+    }
+}
+
+/**
+ * 服务器图标设置：作用于服务端根目录的 server-icon.png（玩家客户端服务器列表里显示的那张）。
+ * 放在两个 Tab 之外，切换 Tab 也能看到。
+ */
+@Composable
+private fun IconBar(vm: AppViewModel, root: File) {
+    val ctx = LocalContext.current
+    var tick by remember { mutableIntStateOf(0) }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            if (ServerIcon.importTo(ctx, uri, ServerIcon.file(root))) {
+                tick++
+                vm.toast(t("图标已更新"))
+            } else {
+                vm.toast(t("图片处理失败"))
+            }
+        }
+    }
+    val hasIcon = remember(tick) { ServerIcon.exists(root) }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
+    ) {
+        InstanceIcon(root, size = 44.dp, refreshKey = tick)
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(t("服务器图标"), style = MaterialTheme.typography.titleSmall)
+            Text(
+                t("玩家在服务器列表里看到的图标"),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                t("重启服务端后生效"),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (hasIcon) {
+            TextButton(onClick = {
+                if (ServerIcon.remove(root)) {
+                    tick++
+                    vm.toast(t("已移除图标"))
+                }
+            }) { Text(t("移除")) }
+        }
+        TextButton(onClick = { picker.launch("image/*") }) {
+            Text(if (hasIcon) t("更换") else t("选择图片"))
+        }
     }
 }

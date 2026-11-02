@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -53,6 +54,7 @@ import dev.tinymcserver.app.core.model.InstanceState
 import dev.tinymcserver.app.core.model.ServerInstance
 import dev.tinymcserver.app.core.server.ServerManager
 import dev.tinymcserver.app.core.storage.Paths
+import dev.tinymcserver.app.ui.components.InstanceIcon
 import dev.tinymcserver.app.ui.AppViewModel
 import java.io.File
 import dev.tinymcserver.app.core.i18n.t
@@ -162,6 +164,8 @@ private fun InstanceCard(
     ) {
         Column(Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                InstanceIcon(Paths.instanceDir(ctx, inst.id), size = 44.dp)
+                Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(inst.config.name, style = MaterialTheme.typography.titleMedium)
                     Text(
