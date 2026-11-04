@@ -142,9 +142,27 @@ All data lives in the app's private directory; no storage permission is required
 
 ## Background & keep-alive
 
-While a server runs, a foreground service is started (`foregroundServiceType="dataSync|specialUse"`, `stopWithTask=false`).
+While a server runs, a foreground service is started (`foregroundServiceType="specialUse"`, `stopWithTask=false`).
 The notification shows the flavor, version, runtime, port, player count and memory usage; a `PARTIAL_WAKE_LOCK` and a `WIFI_LOCK` are held while running.
 Adding the app to the battery-optimization whitelist is recommended for more stable background operation.
+
+## Known issues
+
+The following issues come from the Android platform itself and **cannot be fixed inside the app** — changing these system settings requires Developer options or shell access. Follow the steps below manually.
+
+### Android 12 and later: the server gets killed by the system (child-process limit)
+
+**Symptom**: the server disappears after running for a while. The console shows no Java exception and the log just stops mid-line; the exit code is `9` (SIGKILL) or `137`.
+
+**Cause**: Android 12 introduced the Phantom Process Killer, which caps how many child processes an app may spawn (32 by default, counted across all apps). The server is a child process of this app, so once the limit is exceeded — or the process is judged too CPU-hungry — the platform sends SIGKILL directly and the JVM never gets a chance to log anything. Running several instances at once, keeping frp up, or unpacking a JRE for the first time makes it more likely.
+
+**Fix**: disable the limit.
+
+1. Check Developer options for a switch named "Phantom process killing" or similar and turn it off — some ROMs do not expose it.
+2. If there is no such switch, turn the limit off via ADB (enable USB debugging first). The exact commands differ slightly between Android versions — search for "disable phantom process killer Android" or check the Termux documentation.
+3. No computer at hand? Use **Shizuku + aShell**: activate Shizuku first, then open aShell — aShell runs commands with ADB privileges, exactly the same as typing ADB on a computer — and run the command from step 2 there.
+
+**Note**: the change usually takes effect immediately; some ROMs reset this setting when Developer options are turned off or after a major system update — repeat the steps if it comes back.
 
 ## Building
 
