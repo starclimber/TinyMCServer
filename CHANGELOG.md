@@ -5,6 +5,19 @@
 
 ---
 
+## [1.3.4] — 2026-11-05
+
+### 新增 / Added
+
+- **Vanilla 预览与测试版**：服务端类型里新增一个独立选项「Vanilla（预览与测试版）」，选中后版本列表会包含除正式版以外的全部版本——快照（如 `26.4-snapshot-7`）、预发布 / RC（`-pre`、`-rc`），以及远古的 `old_beta` / `old_alpha`。默认的「Vanilla」仍然只列正式版；Paper / Purpur / Folia 没有对应的 MC 快照服务端，不受影响。
+  **Vanilla previews and test builds**: a new standalone option "Vanilla (preview and test builds)" in the server type list. Selecting it makes the version list include everything except releases — snapshots such as `26.4-snapshot-7`, pre-releases / RCs (`-pre`, `-rc`), and the legacy `old_beta` / `old_alpha` builds. Plain "Vanilla" still lists releases only; Paper / Purpur / Folia are unaffected since no snapshot servers exist for them.
+
+### 变更 / Changed
+
+- 版本号 `1.3.3` → `1.3.4`（versionCode 12）。
+
+---
+
 ## [1.3.3] — 2026-11-02
 
 ### 新增 / Added

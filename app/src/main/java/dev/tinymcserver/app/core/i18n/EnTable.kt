@@ -365,6 +365,8 @@ internal val EN_TABLE: Map<String, String> = mapOf(
     "服务端 jar 均从官方或授权源获取，使用须遵守 Minecraft EULA。" to "Server jars are obtained from official or authorized sources; usage must comply with the Minecraft EULA.",
     "服务端已就绪" to "Server ready",
     "[Tiny] 已为服务端启用 Android 版 JNA 原生库" to "[Tiny] Enabled the Android build of the JNA native library",
+    "Vanilla（预览与测试版）" to "Vanilla (preview and test builds)",
+    "快照、预发布与远古测试版；可能损坏存档，建议先备份世界" to "Snapshots, pre-releases and legacy test builds; they may corrupt saves, so back up your world first",
     "重启服务端后生效" to "Applies after the server restarts",
     "服务器图标" to "Server icon",
     "玩家在服务器列表里看到的图标" to "The icon players see in their server list",

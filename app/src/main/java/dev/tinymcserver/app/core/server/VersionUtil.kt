@@ -37,6 +37,11 @@ object VersionUtil {
      *  - 1.16 及更早            -> null（需要 Java 8，自 1.0.13 起不再内置 JRE 8）
      */
     fun recommendJre(mcVersion: String): JreVersion? {
+        // 周快照命名（25w14a / 26w03a）：数字解析不出来，按前两位年份推断所属版本线
+        Regex("""^(\d{2})w\d{2}[a-z]$""").find(mcVersion)?.let { m ->
+            val year = m.groupValues[1].toIntOrNull() ?: 0
+            return if (year >= 26) JreVersion.JRE25 else JreVersion.JRE21
+        }
         val p = parse(mcVersion)
         if (p.isEmpty()) return JreVersion.JRE21
         val major = p[0]

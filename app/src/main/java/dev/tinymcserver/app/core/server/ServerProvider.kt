@@ -31,7 +31,15 @@ object ServerProvider {
      * 版本列表。解析异常 / 空列表一律**抛异常**（而不是返回空列表），
      * 这样界面能给出明确原因和「重试」入口，也不会把空结果缓存下来。
      */
-    fun listVersions(type: ServerType): List<String> {
+    fun listVersions(type: ServerType, includeTesting: Boolean = false): List<String> {
+        // 预览版 / 测试版只有 Vanilla 才有（Paper、Folia、Purpur 没有对应 MC 快照的服务端）
+        if (type == ServerType.VANILLA && includeTesting) {
+            val all = vanillaVersions(includeTesting = true)
+            if (all.isEmpty()) {
+                throw RuntimeException(t("%s 没有可用版本，请稍后重试", type.display))
+            }
+            return all
+        }
         val raw = when (type) {
             ServerType.VANILLA -> vanillaVersions()
             ServerType.PAPER -> paperVersions("paper")
@@ -83,11 +91,19 @@ object ServerProvider {
         return root
     }
 
-    private fun vanillaVersions(): List<String> {
+    /**
+     * Vanilla 版本列表。
+     * [includeTesting] = false 时只给正式版（type = release）；
+     * = true 时只给**除正式版以外**的版本：snapshot（快照 / 预发布 / RC）、old_beta、old_alpha。
+     */
+    private fun vanillaVersions(includeTesting: Boolean = false): List<String> {
         val arr = manifest()["versions"]?.jsonArray ?: return emptyList()
         return arr.mapNotNull { el ->
             val o = el.jsonObject
-            if (o["type"]?.jsonPrimitive?.content == "release") o["id"]?.jsonPrimitive?.content else null
+            val kind = o["type"]?.jsonPrimitive?.content
+            val id = o["id"]?.jsonPrimitive?.content
+            val wanted = if (includeTesting) kind != "release" else kind == "release"
+            if (id != null && wanted) id else null
         }
     }
 

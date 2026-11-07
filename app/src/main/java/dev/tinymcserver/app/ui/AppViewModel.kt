@@ -85,10 +85,17 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
      *
      * @param force 忽略缓存重新请求（界面上的「重试」用它）
      */
-    suspend fun loadVersions(type: ServerType, force: Boolean = false): List<String> {
-        if (!force) versionCache[type.key]?.takeIf { it.isNotEmpty() }?.let { return it }
-        val list = withContext(Dispatchers.IO) { ServerProvider.listVersions(type) }
-        if (list.isNotEmpty()) versionCache[type.key] = list
+    suspend fun loadVersions(
+        type: ServerType,
+        force: Boolean = false,
+        includeTesting: Boolean = false,
+    ): List<String> {
+        val key = if (includeTesting) "${type.key}#testing" else type.key
+        if (!force) versionCache[key]?.takeIf { it.isNotEmpty() }?.let { return it }
+        val list = withContext(Dispatchers.IO) {
+            ServerProvider.listVersions(type, includeTesting)
+        }
+        if (list.isNotEmpty()) versionCache[key] = list
         return list
     }
 

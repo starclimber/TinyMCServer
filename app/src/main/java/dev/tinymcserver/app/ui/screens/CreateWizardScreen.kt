@@ -95,6 +95,8 @@ fun CreateWizardScreen(vm: AppViewModel, nav: NavController, editId: String?) {
     var loadingVersions by remember { mutableStateOf(false) }
     var versionError by remember { mutableStateOf<String?>(null) }
     var versionReload by remember { mutableStateOf(0) }
+    // 预览版 / 测试版：只对 Vanilla 有意义（除正式版外的 snapshot / old_beta / old_alpha）
+    var includeTesting by remember { mutableStateOf(false) }
     var showEula by remember { mutableStateOf(false) }
     var eulaAccepted by remember { mutableStateOf(editId != null && EulaManager.isAccepted(Paths.instanceDir(ctx, editId))) }
 
@@ -115,10 +117,12 @@ fun CreateWizardScreen(vm: AppViewModel, nav: NavController, editId: String?) {
     }
 
     // 版本列表加载：失败时记录原因供界面展示；「重试」会强制绕过缓存重新请求。
-    LaunchedEffect(type, versionReload) {
+    LaunchedEffect(type, versionReload, includeTesting) {
         loadingVersions = true
         versionError = null
-        val res = runCatching { vm.loadVersions(type, force = versionReload > 0) }
+        val res = runCatching {
+            vm.loadVersions(type, force = versionReload > 0, includeTesting = includeTesting)
+        }
         versions = res.getOrDefault(emptyList())
         versionError = res.exceptionOrNull()?.message
         loadingVersions = false
@@ -143,15 +147,37 @@ fun CreateWizardScreen(vm: AppViewModel, nav: NavController, editId: String?) {
             SectionTitle(t("基础"))
             FieldCard {
                 LabeledField(t("名称"), name, { name = it })
-                DropField(t("服务端类型"), type.display, ServerType.entries.map { it.display }) { sel ->
-                    type = ServerType.entries.first { it.display == sel }
+                // 「预览与测试版」是服务端类型下拉里的一个独立选项，紧跟在「原版」下面；
+                // 选中它只列出除正式版以外的版本
+                val previewOption = t("Vanilla（预览与测试版）")
+                val typeOptions = listOf(ServerType.VANILLA.display, previewOption) +
+                    ServerType.entries.filter { it != ServerType.VANILLA }.map { it.display }
+                DropField(
+                    t("服务端类型"),
+                    if (includeTesting) previewOption else type.display,
+                    typeOptions,
+                ) { sel ->
+                    if (sel == previewOption) {
+                        type = ServerType.VANILLA
+                        includeTesting = true
+                    } else {
+                        type = ServerType.entries.first { it.display == sel }
+                        includeTesting = false
+                    }
                     mcVersion = ""
                 }
                 DropField(
                     t("MC 版本") + if (loadingVersions) t("（加载中…）") else t("（%s 个）", versions.size),
                     mcVersion.ifBlank { t("点击选择") },
-                    versions.take(200),
+                    if (includeTesting) versions.take(600) else versions.take(200),
                 ) { mcVersion = it }
+                if (includeTesting) {
+                    Text(
+                        t("快照、预发布与远古测试版；可能损坏存档，建议先备份世界"),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 if (!loadingVersions && versions.isEmpty()) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
