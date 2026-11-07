@@ -5,6 +5,19 @@
 
 ---
 
+## [1.3.5] — 2026-11-07
+
+### 新增 / Added
+
+- **一键重新生成地图**：控制台底部按钮区新增「重新生成地图」（在「备份」左边）。点击确认后会自动完成整套流程：服务端正在运行时先 `save-all` 再正常停止，删除 `level-name` 对应的主世界 / 下界 / 末地三个目录，随后重新启动，由服务端自己生成一张全新地图。只删世界数据，插件、配置与其他文件不动，也不自动备份。
+  **One-tap world regeneration**: a new "Regenerate world" button in the console action row (left of "Backup"). After confirming, the app saves and stops the running server, deletes the three world folders that belong to `level-name` (overworld / Nether / End), and starts the server again so it generates a brand-new map. Only world data is removed — plugins, configs and other files are untouched, and no backup is created.
+
+### 变更 / Changed
+
+- 版本号 `1.3.4` → `1.3.5`（versionCode 13）。
+
+---
+
 ## [1.3.4] — 2026-11-05
 
 ### 新增 / Added

@@ -90,6 +90,45 @@ class RuntimeController(
         scope.launch { doStart(restart) }
     }
 
+    /**
+     * 重新生成地图：运行中的服务端先正常停止（save-all + stop），
+     * 再删除 level-name 对应的世界目录（主世界 / 下界 / 末地），最后重新启动，让服务端自己生成新地图。
+     * 不做备份；插件、配置与其他文件一律不动。
+     */
+    fun regenerateWorld() {
+        scope.launch {
+            val st = _state.value.state
+            if (st == InstanceState.RUNNING || st == InstanceState.STARTING) {
+                runCatching { sendCommand("save-all") }
+                delay(1_500)
+                requestStop()
+                withTimeoutOrNull(90_000) {
+                    while (_state.value.state != InstanceState.STOPPED &&
+                        _state.value.state != InstanceState.CRASHED
+                    ) {
+                        delay(300)
+                    }
+                }
+            }
+            val now = _state.value.state
+            if (now != InstanceState.STOPPED && now != InstanceState.CRASHED) {
+                appendLocal(t("服务端未能停止，已取消重新生成地图"))
+                return@launch
+            }
+            val levelName = runCatching {
+                if (propertiesFile.isFile) ServerProperties.parse(propertiesFile.readText())["level-name"]
+                else null
+            }.getOrNull()?.takeIf { it.isNotBlank() } ?: "world"
+            var removed = 0
+            for (name in listOf(levelName, "${levelName}_nether", "${levelName}_the_end")) {
+                val f = File(dir, name)
+                if (f.exists() && runCatching { f.deleteRecursively() }.getOrDefault(false)) removed++
+            }
+            appendLocal(t("已删除 %s 个世界目录，正在重新生成…", removed))
+            start(restart = true)
+        }
+    }
+
     fun requestStop() {
         userStop = true
         val w = writer

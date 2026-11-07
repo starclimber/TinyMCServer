@@ -117,6 +117,7 @@ fun ConsoleScreen(vm: AppViewModel, nav: NavController, id: String) {
     var showDigest by remember { mutableStateOf(false) }
     var showDiag by remember { mutableStateOf(false) }
     var showArgs by remember { mutableStateOf(false) }
+    var showRegen by remember { mutableStateOf(false) }
     var selfTestText by remember { mutableStateOf<String?>(null) }
     var testing by remember { mutableStateOf(false) }
     var seriesText by remember { mutableStateOf<String?>(null) }
@@ -312,6 +313,7 @@ fun ConsoleScreen(vm: AppViewModel, nav: NavController, id: String) {
                         OutlinedButton(onClick = { nav.navigate("files/$id") }) { Text(t("文件")) }
                         OutlinedButton(onClick = { nav.navigate("config/$id") }) { Text(t("配置")) }
                         OutlinedButton(onClick = { nav.navigate("players/$id") }) { Text(t("玩家")) }
+                        OutlinedButton(onClick = { showRegen = true }) { Text(t("重新生成地图")) }
                         OutlinedButton(onClick = { nav.navigate("backups/$id") }) { Text(t("备份")) }
                         OutlinedButton(onClick = { nav.navigate("pluginimport/$id") }) {
                             Text(t("导入插件"))
@@ -345,6 +347,27 @@ fun ConsoleScreen(vm: AppViewModel, nav: NavController, id: String) {
                 }
             }
         }
+    }
+
+    if (showRegen) {
+        AlertDialog(
+            onDismissRequest = { showRegen = false },
+            title = { Text(t("重新生成地图")) },
+            text = {
+                Text(
+                    t("将删除当前世界（含下界与末地）并重新启动服务端，生成全新地图。此操作不可恢复，也不会自动备份。"),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRegen = false
+                    controller.regenerateWorld()
+                }) { Text(t("确定")) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRegen = false }) { Text(t("取消")) }
+            },
+        )
     }
 
     if (showDigest) {
