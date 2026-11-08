@@ -28,6 +28,30 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Keep release helper script
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/mirror-scripts"
+          cp -a .github/scripts/. "$RUNNER_TEMP/mirror-scripts/"
+
+      - name: Drop .github/workflows and .github/scripts from mirrored history
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet --disable-pip-version-check git-filter-repo
+          export PATH="$(python3 -m site --user-base)/bin:$PATH"
+          git filter-repo \
+            --invert-paths \
+            --path .github/workflows \
+            --path .github/scripts \
+            --force
+          if git ls-tree -r --name-only HEAD | grep -qE '^\.github/(workflows|scripts)/'; then
+            echo "::error::.github/workflows 或 .github/scripts 仍存在于 HEAD，镜像已中止"
+            exit 1
+          fi
+          echo "镜像保留的 .github 内容："
+          git ls-tree -r --name-only HEAD | grep '^\.github/' || true
+          echo "HEAD：$(git log --oneline -1)"
+
       - name: Push code and tags to Codeberg
         env:
           CODEBERG_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
@@ -72,7 +96,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          bash .github/scripts/sync-release.sh \
+          bash "$RUNNER_TEMP/mirror-scripts/sync-release.sh" \
             "$CODEBERG_API" "$CODEBERG_USER" "$CODEBERG_REPO" "$CODEBERG_TOKEN"
 
       - name: Sync release (with APK) to Gitea
@@ -82,5 +106,5 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${GITEA_TOKEN:-}" ]; then echo "::warning::缺少 GITEA_TOKEN，跳过 Gitea"; exit 0; fi
-          bash .github/scripts/sync-release.sh \
+          bash "$RUNNER_TEMP/mirror-scripts/sync-release.sh" \
             "$GITEA_API" "$GITEA_USER" "$GITEA_REPO" "$GITEA_TOKEN"
