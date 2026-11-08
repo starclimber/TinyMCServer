@@ -189,6 +189,10 @@ Both `local.properties` and the keystore file are listed in `.gitignore` and are
 
 See [CHANGELOG.md](CHANGELOG.md).
 
+## Subscribe
+
+Want the latest updates? Subscribe via RSS: <https://rss.cdn.9k.beer/tinymcserver.rss>
+
 ## License
 
 This project is licensed under the **GNU Affero General Public License v3.0**; see [`LICENSE`](LICENSE).

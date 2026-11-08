@@ -190,6 +190,11 @@ RELEASE_KEY_PASSWORD=<口令>
 
 见 [CHANGELOG.md](CHANGELOG.md)。
 
+## 订阅更新
+
+想看最新更新？
+请用 RSS 订阅：<https://rss.cdn.9k.beer/tinymcserver.rss>
+
 ## 许可
 
 本项目采用 **GNU Affero General Public License v3.0**，全文见 [`LICENSE`](LICENSE)。
