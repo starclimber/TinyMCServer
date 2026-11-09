@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
     tags: ["v*"]
+  # 发布 / 修改 Release（标题、正文）时也同步一次，镜像端标题才跟得上
+  release:
+    types: [published, edited, released]
   workflow_dispatch:
 
 concurrency:
@@ -22,6 +25,8 @@ env:
 jobs:
   mirror:
     runs-on: ubuntu-latest
+    # 草稿 Release 不同步
+    if: github.event_name != 'release' || github.event.release.draft == false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,6 +40,7 @@ jobs:
           cp -a .github/scripts/. "$RUNNER_TEMP/mirror-scripts/"
 
       - name: Drop .github/workflows and .github/scripts from mirrored history
+        if: github.event_name != 'release'
         run: |
           set -euo pipefail
           python3 -m pip install --quiet --disable-pip-version-check git-filter-repo
@@ -53,6 +59,7 @@ jobs:
           echo "HEAD：$(git log --oneline -1)"
 
       - name: Push code and tags to Codeberg
+        if: github.event_name != 'release'
         env:
           CODEBERG_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
         run: |
@@ -72,6 +79,7 @@ jobs:
           git config --local --unset-all credential.helper || true
 
       - name: Push code and tags to Gitea
+        if: github.event_name != 'release'
         env:
           GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
         run: |
@@ -94,17 +102,19 @@ jobs:
         env:
           CODEBERG_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           set -euo pipefail
           bash "$RUNNER_TEMP/mirror-scripts/sync-release.sh" \
-            "$CODEBERG_API" "$CODEBERG_USER" "$CODEBERG_REPO" "$CODEBERG_TOKEN"
+            "$CODEBERG_API" "$CODEBERG_USER" "$CODEBERG_REPO" "$CODEBERG_TOKEN" "${RELEASE_TAG:-}"
 
       - name: Sync release (with APK) to Gitea
         env:
           GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           set -euo pipefail
           if [ -z "${GITEA_TOKEN:-}" ]; then echo "::warning::缺少 GITEA_TOKEN，跳过 Gitea"; exit 0; fi
           bash "$RUNNER_TEMP/mirror-scripts/sync-release.sh" \
-            "$GITEA_API" "$GITEA_USER" "$GITEA_REPO" "$GITEA_TOKEN"
+            "$GITEA_API" "$GITEA_USER" "$GITEA_REPO" "$GITEA_TOKEN" "${RELEASE_TAG:-}"

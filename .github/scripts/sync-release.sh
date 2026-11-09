@@ -7,12 +7,16 @@ API="$1"
 OWNER="$2"
 REPO="$3"
 TOKEN="$4"
+# 第 5 个参数：release 事件里由 CI 传入具体 tag；为空时按 build.gradle 的 versionName 推断
+TAG="${5:-}"
 
 GH_REPO="${GH_REPO:-starclimber/TinyMCServer}"
 
-VERSION=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -1)
-TAG="v${VERSION}"
-echo "版本: $VERSION  标签: $TAG  目标: $API/$OWNER/$REPO"
+if [ -z "$TAG" ]; then
+  VERSION=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -1)
+  TAG="v${VERSION}"
+fi
+echo "标签: $TAG  目标: $API/$OWNER/$REPO"
 
 mkdir -p dist
 gh release view "$TAG" --repo "$GH_REPO" --json name,body > rel.json 2>/dev/null || echo '{}' > rel.json
