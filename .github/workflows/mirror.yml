@@ -103,18 +103,20 @@ jobs:
           CODEBERG_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
+          SYNC_MODE: ${{ github.event_name == 'release' && 'one' || 'all' }}
         run: |
           set -euo pipefail
           bash "$RUNNER_TEMP/mirror-scripts/sync-release.sh" \
-            "$CODEBERG_API" "$CODEBERG_USER" "$CODEBERG_REPO" "$CODEBERG_TOKEN" "${RELEASE_TAG:-}"
+            "$CODEBERG_API" "$CODEBERG_USER" "$CODEBERG_REPO" "$CODEBERG_TOKEN" "${RELEASE_TAG:-}" "${SYNC_MODE:-all}"
 
       - name: Sync release (with APK) to Gitea
         env:
           GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
+          SYNC_MODE: ${{ github.event_name == 'release' && 'one' || 'all' }}
         run: |
           set -euo pipefail
           if [ -z "${GITEA_TOKEN:-}" ]; then echo "::warning::缺少 GITEA_TOKEN，跳过 Gitea"; exit 0; fi
           bash "$RUNNER_TEMP/mirror-scripts/sync-release.sh" \
-            "$GITEA_API" "$GITEA_USER" "$GITEA_REPO" "$GITEA_TOKEN" "${RELEASE_TAG:-}"
+            "$GITEA_API" "$GITEA_USER" "$GITEA_REPO" "$GITEA_TOKEN" "${RELEASE_TAG:-}" "${SYNC_MODE:-all}"
