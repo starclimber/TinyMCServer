@@ -5,6 +5,30 @@
 
 ---
 
+## [1.3.6] — 2026-11-10
+
+### 新增 / Added
+
+- **玩家管理页改为在线玩家列表**：页面只列出当前在服务器的玩家，每人一行，右侧直接给出「白名单」「OP」「封禁」三个按钮 —— 已经在对应名单里的玩家，按钮是实心的，点一下移出；不在名单里的按钮是描边的，点一下加入。输入名字后点放大镜或键盘上的搜索键才过滤列表。服务端没有运行、或当前没人在线时，页面正中分别提示「请启动服务器后再试」「当前暂无玩家」。
+  **Player management is now an online-player list**: only the players currently on the server are listed, one per row, with "Whitelist", "OP" and "Ban" buttons on the right — a filled button means the player is already in that list and tapping removes them, an outlined one adds them. Type a name and tap the magnifier or the keyboard search key to filter. When the server isn't running, or nobody is online, the page shows "Start the server first" / "No players online" in the centre.
+
+### 修复 / Fixed
+
+- **在线人数实时更新**：有人加入或退出时，控制台顶部显示的人数立刻跟着变，不用再手动执行 `list`。服务端启动时人数归零。
+  **Live player count**: the counter in the console header changes the moment someone joins or leaves — no more running `list` by hand. It resets when the server starts.
+
+- **原版不再要求勾选 EULA**：选择「Vanilla」或「Vanilla（预览与测试版）」时不再显示 EULA 勾选项，创建服务器时会自动写好启动所需的 `eula.txt`；Paper / Purpur / Folia 仍然需要勾选。
+  **Vanilla no longer asks for the EULA checkbox**: choosing "Vanilla" or "Vanilla (preview and test builds)" skips the checkbox and writes the required `eula.txt` when the server is created; Paper / Purpur / Folia still ask.
+
+### 变更 / Changed
+
+- **TPS 快捷命令**：控制台快捷命令里的 `spark tps` 改为 `tps`。新版服务端没有内置 spark，`spark tps` 会报未知命令，而 `tps` 是 Paper / Purpur / Folia 自带的。
+  **TPS shortcut**: the console shortcut `spark tps` is now `tps` — newer servers don't bundle spark, so `spark tps` failed with an unknown-command error, while `tps` is built into Paper / Purpur / Folia.
+
+- 版本号 `1.3.5` → `1.3.6`（versionCode 14）。
+
+---
+
 ## [1.3.5] — 2026-11-07
 
 ### 新增 / Added

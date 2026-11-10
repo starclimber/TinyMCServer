@@ -300,7 +300,7 @@ fun ConsoleScreen(vm: AppViewModel, nav: NavController, id: String) {
                             )
                         }
                         listOf("stop", "save-all", "reload confirm", "whitelist list",
-                            "list", "spark tps", "say hello").forEach { c ->
+                            "list", "tps", "say hello").forEach { c ->
                             AssistChip(onClick = { controller.sendCommand(c) }, label = { Text(c) })
                         }
                     }

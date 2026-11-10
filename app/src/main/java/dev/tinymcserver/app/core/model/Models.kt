@@ -120,6 +120,8 @@ data class InstanceRuntime(
     val state: InstanceState = InstanceState.STOPPED,
     val pid: Long = -1,
     val players: Int = 0,
+    /** 当前在线的玩家名（由日志里的 joined / left 行实时维护） */
+    val onlinePlayers: List<String> = emptyList(),
     val maxPlayers: Int = 0,
     val memoryUsedMb: Long = 0,
     val memoryMaxMb: Long = 0,

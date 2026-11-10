@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -16,6 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -311,19 +313,22 @@ fun CreateWizardScreen(vm: AppViewModel, nav: NavController, editId: String?) {
                 }
             }
 
-            SectionTitle(t("合规"))
-            FieldCard {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = eulaAccepted, onCheckedChange = { eulaAccepted = it })
-                    Text(t("我已阅读并同意 Minecraft EULA"), Modifier.weight(1f))
+            // 原版（含原版的预览 / 测试版）不显示 EULA 勾选，创建时自动写入 eula=true
+            if (type != ServerType.VANILLA) {
+                SectionTitle(t("合规"))
+                FieldCard {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = eulaAccepted, onCheckedChange = { eulaAccepted = it })
+                        Text(t("我已阅读并同意 Minecraft EULA"), Modifier.weight(1f))
+                    }
+                    TextButton(onClick = { showEula = true }) { Text(t("查看 EULA 摘要")) }
                 }
-                TextButton(onClick = { showEula = true }) { Text(t("查看 EULA 摘要")) }
             }
 
             Button(
                 enabled = jreSupported,
                 onClick = {
-                    if (!eulaAccepted) {
+                    if (type != ServerType.VANILLA && !eulaAccepted) {
                         vm.toast(t("请先同意 Mojang EULA"))
                         return@Button
                     }
@@ -360,7 +365,7 @@ fun CreateWizardScreen(vm: AppViewModel, nav: NavController, editId: String?) {
                     } else {
                         vm.saveInstance(existing.copy(config = cfg))
                         pendingIcon?.let { ServerIcon.install(it, Paths.instanceDir(ctx, existing.id)) }
-                        if (eulaAccepted) EulaManager.accept(Paths.instanceDir(ctx, existing.id))
+                        if (eulaAccepted || type == ServerType.VANILLA) EulaManager.accept(Paths.instanceDir(ctx, existing.id))
                         vm.toast(t("已保存"))
                     }
                     if (nav.previousBackStackEntry != null) nav.popBackStack()
@@ -403,7 +408,12 @@ private fun DropField(
             ) {
                 Text(value, Modifier.weight(1f), maxLines = 1,
                     fontWeight = FontWeight.Normal)
-                Text("▾")
+                // 箭头用固定尺寸图标，不再随文字长度被挤压变形
+                Icon(
+                    Icons.Filled.ArrowDropDown,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                )
             }
             DropdownMenu(
                 expanded = expanded,

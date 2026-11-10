@@ -43,6 +43,20 @@ object PlayerManager {
             readNames(file(ctx, id, "banned-ips.json"), "ip")
         }
 
+    /**
+     * 玩家列表：以 usercache.json（服务端记录的所有登录过的玩家）为底，
+     * 再并入各名单里出现过的名字，保证只加进白名单、从未上线的玩家也能看到。
+     */
+    fun allPlayers(ctx: Context, id: String): List<Player> {
+        val merged = LinkedHashMap<String, Player>()
+        fun addAll(list: List<Player>) = list.forEach { merged.putIfAbsent(it.name, it) }
+        addAll(readNames(file(ctx, id, "usercache.json"), "name"))
+        addAll(whitelist(ctx, id))
+        addAll(ops(ctx, id))
+        addAll(banned(ctx, id))
+        return merged.values.sortedBy { it.name.lowercase() }
+    }
+
     /** 生成对应的控制台命令 */
     fun commandForWhitelistAdd(name: String) = "whitelist add $name"
     fun commandForWhitelistRemove(name: String) = "whitelist remove $name"

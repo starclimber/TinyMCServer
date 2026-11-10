@@ -9,8 +9,11 @@ object LogParser {
 
     private val playersRe =
         Regex("There are (\\d+) of a max of (\\d+) players online")
-    private val joinRe = Regex("]: ([A-Za-z0-9_]{1,16}) joined the game")
-    private val leaveRe = Regex("]: ([A-Za-z0-9_]{1,16}) left the game")
+    // 名字不限定 ASCII：离线服务器允许中文/特殊字符的名字。
+    // 新版服务端会把这两条包成 "System chat: Steve joined the game"，
+    // 因此 "System chat: " 是可选的；聊天行（<Steve> I joined the game）仍不会误判。
+    private val joinRe = Regex("\\]: (?:System chat: )?(\\S{1,32}) joined the game")
+    private val leaveRe = Regex("\\]: (?:System chat: )?(\\S{1,32}) left the game")
 
     /** 返回 (在线人数, 上限) */
     fun playersOnline(line: String): Pair<Int, Int>? {

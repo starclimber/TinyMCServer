@@ -206,6 +206,8 @@ class RuntimeController(
             _state.value = _state.value.copy(
                 state = InstanceState.STARTING,
                 startedAt = System.currentTimeMillis(),
+                players = 0,
+                onlinePlayers = emptyList(),
             )
             appendLine(t("[Tiny] 使用 JRE %s 启动：%s %s", major, instance.config.type.display, instance.config.mcVersion))
             if (jnaDir != null) appendLine(t("[Tiny] 已为服务端启用 Android 版 JNA 原生库"))
@@ -352,8 +354,20 @@ class RuntimeController(
             return
         }
         appendLine(line)
-        LogParser.playersOnline(line)?.let { (n, max) ->
-            _state.value = _state.value.copy(players = n, maxPlayers = max)
+        // 在线玩家完全由日志事件维护：joined 加入、left 移除，
+        // 人数直接取列表长度，不再依赖 list 命令的输出。
+        val joined = LogParser.join(line)
+        val left = LogParser.leave(line)
+        if (joined != null || left != null) {
+            val cur = _state.value
+            val online = when {
+                joined != null -> if (joined in cur.onlinePlayers) cur.onlinePlayers
+                else cur.onlinePlayers + joined
+                else -> cur.onlinePlayers - left.orEmpty()
+            }
+            if (online != cur.onlinePlayers) {
+                _state.value = cur.copy(onlinePlayers = online, players = online.size)
+            }
         }
         when {
             LogParser.isOom(line) -> appendLocal(t("检测到内存溢出(OOM)，建议提高 Xmx 或降低视距"))
