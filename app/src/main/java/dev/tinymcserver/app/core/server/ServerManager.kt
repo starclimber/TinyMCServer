@@ -7,6 +7,7 @@ import dev.tinymcserver.app.core.model.ServerInstance
 import dev.tinymcserver.app.core.runtime.JreManager
 import dev.tinymcserver.app.core.storage.EulaManager
 import dev.tinymcserver.app.core.storage.Paths
+import dev.tinymcserver.app.core.trigger.TriggerEngine
 import dev.tinymcserver.app.core.storage.ServerProperties
 import dev.tinymcserver.app.core.util.ProcessUtil
 import dev.tinymcserver.app.core.util.Timezones
@@ -68,6 +69,7 @@ class RuntimeController(
     private val ring = ArrayDeque<String>()
     private var process: Process? = null
     private var writer: BufferedWriter? = null
+    private val writeLock = Any()
     private var memJob: Job? = null
     private var userStop = false
     private var restartCount = 0
@@ -240,6 +242,34 @@ class RuntimeController(
             val proc = pb.start()
             process = proc
             writer = BufferedWriter(OutputStreamWriter(proc.outputStream, Charsets.UTF_8))
+            // 触发器引擎：日志驱动；命令直接写回服务端 stdin
+            TriggerEngine.register(
+                TriggerEngine.Session(
+                    ctx = appCtx,
+                    instanceId = instance.id,
+                    scope = scope,
+                    send = { cmd ->
+                        val w = writer
+                        if (w != null) {
+                            synchronized(writeLock) {
+                                runCatching {
+                                    w.write(cmd)
+                                    w.newLine()
+                                    w.flush()
+                                }
+                            }
+                        }
+                        Unit
+                    },
+                    online = { _state.value.onlinePlayers },
+                    maxPlayers = { instance.config.maxPlayers },
+                    running = {
+                        _state.value.state == InstanceState.RUNNING ||
+                            _state.value.state == InstanceState.STARTING
+                    },
+                    notice = { text -> appendLocal(text) },
+                )
+            )
             val pid = ProcessUtil.findPid(jar.absolutePath)
             appendLine(t("[Tiny] 进程已启动") + if (pid > 0) " (pid=$pid)" else "")
             _state.value = _state.value.copy(state = InstanceState.RUNNING, pid = pid)
@@ -255,6 +285,7 @@ class RuntimeController(
                 handleLine(line)
             }
             val code = proc.waitFor()
+            runCatching { TriggerEngine.unregister(instance.id) }
             memJob?.cancel()
             flushNoise()
             appendLine(
@@ -337,6 +368,7 @@ class RuntimeController(
     }
 
     private fun handleLine(line: String) {
+        runCatching { TriggerEngine.onLine(instance.id, line) }
         // Android 环境固有告警（glibc 版 JNA / oshi 降级）：原文写进 logs/android-noise.log，
         // 控制台只留一行提示，避免整屏红字掩盖真正的问题。
         if (noiseSuppressing) {

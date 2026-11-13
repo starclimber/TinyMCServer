@@ -23,6 +23,7 @@ It bundles a trimmed OpenJDK runtime so the device can create and run Vanilla, P
 
 - **One-tap instance creation**: pick a server flavor and game version; the app matches the runtime and downloads the corresponding server jar automatically.
 - **Console**: live logs, command input, readiness checks, crash diagnostics.
+- **Triggers ("Playground")**: the "Playground" entry in the console builds when / if / then / else automation rules for each instance; every action can carry its own "on success" / "on failure" branch, and every run is logged.
 - **File management**: browse the server directory, edit `server.properties` (with localized labels) and text files, with binary-file detection.
 - **Plugin manager**: search and install plugins from Modrinth, with download integrity checks, progress and cancel.
 - **Backups & player management**: back up / restore instances, manage whitelist / OP / ban lists.
@@ -122,6 +123,31 @@ Bundles the [frp](https://github.com/fatedier/frp) client (frpc 0.71.1, arm64) s
 **Auto-start together with the server**: bind a tunnel to a server instance and frp is launched when that instance reaches RUNNING, and torn down when it stops or crashes. The switch is greyed out until an instance is bound.
 
 **Console**: tap a tunnel card to open it. Live frpc logs (ANSI color codes stripped), with start / stop / clear / edit.
+
+## Triggers ("Playground")
+
+> **Note**: triggers are an early experimental feature and may still have rough edges; please report any problem in [Issues](https://github.com/starclimber/TinyMCServer/issues).
+
+The **Playground** button in the console button row configures automation for one instance: **when** something happens, **if** the conditions hold, **then** run these actions — otherwise run another set.
+
+| Part | Contents |
+|---|---|
+| **When** (event) | Player joins, player leaves, player count, chat, death, advancement, server ready, timer (every N seconds / daily at HH:mm). Player events support three scopes: all players / specific player / name contains. |
+| **If** (condition) | Name match, whitelist, OP, banned, online count, time range, weekday, random chance, time since last run, server state. Multiple conditions can require all or any; with no condition the rule always holds. |
+| **Then** | Actions run when the conditions hold. |
+| **Else** | Actions run when they don't; may be left empty. |
+
+Actions: run any command, broadcast, private message, title / subtitle / actionbar, sound, particles, give items, teleport, teleport to player, gamemode, potion effect, heal, feed, kick, set time / weather, delay, set variable, add to variable, write log, stop the rest, jump to else.
+
+**On success / on failure**: every action can carry two sub-branches. If the server answers within ~0.8 s with `Unknown command`, `Expected ...`, `That player does not exist` and the like, the action counts as failed and the "on failure" branch runs; otherwise "on success" runs. Branches can be nested.
+
+**Variables**: `{player}` (triggering player), `{online}`, `{max}`, `{count}` (how many times this trigger has fired), `{time}`, `{date}`, `{var:name}`.
+
+**List and log**: each trigger has its own switch; the three buttons at the bottom of a card open its log, open the editor or delete it. The log records, in order, the event that matched, the command actually sent and any failure reason, with a failures-only filter and a clear action. When a trigger acts, the console prints `[Trigger] <name>: <command>`.
+
+**Storage**: triggers live in `triggers.json` inside the instance directory and travel with it when you back up or move the instance; the log is `trigger-logs.txt`, capped at 500 lines. Triggers only run while the server is running, and take effect as soon as you save — no restart needed.
+
+**Example**: player joins → if online players ≥ 5 → `say The server is at 5 players`, else `title {player} actionbar {"text":"Welcome back"}`.
 
 ## Architecture
 

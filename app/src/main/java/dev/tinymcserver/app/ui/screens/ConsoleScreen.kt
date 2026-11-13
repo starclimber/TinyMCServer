@@ -313,6 +313,7 @@ fun ConsoleScreen(vm: AppViewModel, nav: NavController, id: String) {
                         OutlinedButton(onClick = { nav.navigate("files/$id") }) { Text(t("文件")) }
                         OutlinedButton(onClick = { nav.navigate("config/$id") }) { Text(t("配置")) }
                         OutlinedButton(onClick = { nav.navigate("players/$id") }) { Text(t("玩家")) }
+                        OutlinedButton(onClick = { nav.navigate("triggers/$id") }) { Text(t("好玩的")) }
                         OutlinedButton(onClick = { showRegen = true }) { Text(t("重新生成地图")) }
                         OutlinedButton(onClick = { nav.navigate("backups/$id") }) { Text(t("备份")) }
                         OutlinedButton(onClick = { nav.navigate("pluginimport/$id") }) {

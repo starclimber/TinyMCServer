@@ -46,6 +46,9 @@ import dev.tinymcserver.app.ui.screens.PluginImportScreen
 import dev.tinymcserver.app.ui.screens.ServerConfigScreen
 import dev.tinymcserver.app.ui.screens.SettingsScreen
 import dev.tinymcserver.app.ui.screens.SkinForgeScreen
+import dev.tinymcserver.app.ui.screens.TriggerEditScreen
+import dev.tinymcserver.app.ui.screens.TriggerListScreen
+import dev.tinymcserver.app.ui.screens.TriggerLogScreen
 import dev.tinymcserver.app.ui.screens.UpdateScreen
 import dev.tinymcserver.app.ui.screens.JreManageScreen
 import dev.tinymcserver.app.ui.screens.AdvancedSettingsScreen
@@ -151,6 +154,25 @@ fun AppNav() {
                 "pluginimport/{id}",
                 arguments = listOf(navArgument("id") { type = NavType.StringType }),
             ) { e -> PluginImportScreen(vm, nav, e.arguments?.getString("id").orEmpty()) }
+            composable(
+                "triggers/{id}",
+                arguments = listOf(navArgument("id") { type = NavType.StringType }),
+            ) { e -> TriggerListScreen(nav, e.arguments?.getString("id").orEmpty()) }
+            composable(
+                "triggerEdit/{instanceId}/{triggerId}",
+                arguments = listOf(
+                    navArgument("instanceId") { type = NavType.StringType },
+                    navArgument("triggerId") { type = NavType.StringType },
+                ),
+            ) { e -> TriggerEditScreen(
+                nav,
+                e.arguments?.getString("instanceId").orEmpty(),
+                e.arguments?.getString("triggerId"),
+            ) }
+            composable(
+                "triggerLog/{id}",
+                arguments = listOf(navArgument("id") { type = NavType.StringType }),
+            ) { e -> TriggerLogScreen(nav, e.arguments?.getString("id").orEmpty()) }
             composable("skinforge") { SkinForgeScreen(nav) }
             composable("settings") { SettingsScreen(vm, nav) }
             composable("about") { AboutScreen(nav) }

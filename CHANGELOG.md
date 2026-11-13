@@ -5,6 +5,23 @@
 
 ---
 
+## [1.4.0] — 2026-11-12
+
+> **注**：本版新增的「触发器（好玩的）」属于前期实验功能，可能会有一些小问题；遇到问题请到 [Issues](https://github.com/starclimber/TinyMCServer/issues) 反馈。
+>
+> **Note**: the new "Triggers (Playground)" feature is experimental and may still have rough edges; please report any problem in [Issues](https://github.com/starclimber/TinyMCServer/issues).
+
+### 新增 / Added
+
+- **好玩的（触发器）**：控制台新增「好玩的」入口，可以给服务器配一套「发生了什么 → 就做什么」的自动化规则。每条触发器由四段组成：**当**（玩家进入 / 退出 / 人数变化 / 聊天 / 死亡 / 获得成就 / 服务器就绪 / 定时）、**如果**（玩家名、白名单、OP、封禁、在线人数、时间范围、星期、随机概率、距上次触发、服务器状态，可全部满足或任一满足，也可以不加条件）、**就**、**否则**。动作包括执行任意命令、广播、私聊、主副标题与物品栏提示、音效、粒子、给物品、传送、游戏模式、药水、回血、饱食度、踢出、改时间天气、延迟、变量等，支持 `{player}` `{online}` `{max}` `{count}` `{time}` 变量。每个动作还能单独配「成功后」「失败后」两个分支——命令写错（服务端回 `Unknown command` 等）会走失败分支。列表页每条触发器带独立开关，卡片底部一排按钮分别是查看日志、编辑、删除；触发器日志按时间记录每次命中的事件、实际发送的命令与失败原因，支持只看失败与清空。触发器动作执行时，控制台会同步显示 `[触发器] <名称>：<命令>`，方便对照服务端回显。
+  **Triggers**: a new "Playground" entry in the console lets you automate the server with "when → then" rules. Each trigger has four parts: **when** (player joins / leaves / player count / chat / death / advancement / server ready / timer), **if** (name, whitelist, OP, banned, online count, time range, weekday, random chance, time since last run, server state; all or any, or no condition at all), **then** and **else**. Actions cover commands, broadcasts, private messages, title/subtitle/actionbar, sounds, particles, items, teleport, gamemode, potion effects, heal, feed, kick, time/weather, delays and variables, with `{player}` `{online}` `{max}` `{count}` `{time}` placeholders. Every action can carry its own "on success" / "on failure" branch — a bad command (server replies `Unknown command`) runs the failure branch. Each trigger has its own switch, and a row of buttons at the bottom of every card opens its log, opens the editor or deletes it. The log records, in order, the event that matched, the command actually sent and any failure reason, with a failures-only filter and a clear action. When a trigger acts, the console also prints `[Trigger] <name>: <command>` so you can compare it with the server output.
+
+### 变更 / Changed
+
+- 版本号 `1.3.6` → `1.4.0`（versionCode 15）。
+
+---
+
 ## [1.3.6] — 2026-11-10
 
 ### 新增 / Added
