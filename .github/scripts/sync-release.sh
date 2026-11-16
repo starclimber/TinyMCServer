@@ -104,9 +104,17 @@ print(" ".join(a["name"] for a in d))' 2>/dev/null || true)
     echo "  下载并上传 $name"
     gh release download "$tag" --repo "$GH_REPO" --pattern "$name" --dir "$tmp" 2>/dev/null || {
       echo "::warning::下载 $name 失败，跳过"; continue; }
-    curl -sS -f -X POST \
+    local code
+    code=$(curl -sS -o /dev/null -w "%{http_code}" -X POST \
       "${API}/repos/${OWNER}/${REPO}/releases/${rel_id}/assets?name=${name}" \
-      "${AUTH[@]}" -F "attachment=@${tmp}/${name}" > /dev/null
+      "${AUTH[@]}" -F "attachment=@${tmp}/${name}" || echo "000")
+    if [ "$code" = "201" ] || [ "$code" = "200" ]; then
+      echo "  已上传 $name"
+    else
+      # Codeberg 对单个资产有体积上限，112MB 的 APK 会被 413 拒收；
+      # 这不该让整次同步失败——Release 的标题/正文仍然要同步过去。
+      echo "::warning::上传 $name 到 ${API} 失败（HTTP $code），APK 请从 GitHub Releases 下载"
+    fi
   done
   rm -rf "$tmp"
 }
@@ -118,7 +126,9 @@ if [ "$MODE" = "all" ]; then
   if [ -z "$tags" ]; then echo "::warning::GitHub 上没有 Release"; exit 0; fi
   fail=0
   for t in $tags; do
-    sync_one "$t" 0 || fail=1
+    # allow=1：目标端缺这个 Release 时也建出来（标题/正文/APK 一起补齐）。
+    # 目标端已齐全的 Release 会因为「资产已齐全」直接跳过，不会重复搬大文件。
+    sync_one "$t" 1 || fail=1
   done
   if [ "$fail" -ne 0 ]; then echo "::error::有 Release 同步失败"; exit 1; fi
   echo "完成：全部 Release → $API"
