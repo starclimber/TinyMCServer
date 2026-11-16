@@ -1,6 +1,10 @@
 package dev.tinymcserver.app.ui.screens
 
+import android.content.Context
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,21 +16,23 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -123,6 +129,11 @@ fun ConsoleScreen(vm: AppViewModel, nav: NavController, id: String) {
     var seriesText by remember { mutableStateOf<String?>(null) }
     var seriesProg by remember { mutableStateOf("") }
     var tick by remember { mutableIntStateOf(0) }
+    // 快捷命令：每个实例各一份，长按可改，右侧加号新增
+    var quick by remember(id) { mutableStateOf(loadQuick(ctx, id)) }
+    var editingQuick by remember { mutableStateOf<Int?>(null) }
+    var quickDraft by remember { mutableStateOf("") }
+    var addingQuick by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
 
@@ -292,19 +303,36 @@ fun ConsoleScreen(vm: AppViewModel, nav: NavController, id: String) {
                     Row(
                         Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         if (!atBottom) {
-                            AssistChip(
+                            QuickCommandChip(
+                                text = t("↓ 最新"),
                                 onClick = { scope.launch { listState.scrollToItem(log.lastIndex) } },
-                                label = { Text(t("↓ 最新")) },
+                                onLongClick = null,
                             )
                         }
-                        listOf("stop", "save-all", "reload confirm", "whitelist list",
-                            "list", "tps", "say hello").forEach { c ->
-                            AssistChip(onClick = { controller.sendCommand(c) }, label = { Text(c) })
+                        // 快捷命令：点一下发送，长按修改/删除，最右边加号新增。
+                        // 命令行输入框就在这排下面，所以这里只占一行、左右可滑。
+                        quick.forEachIndexed { i, c ->
+                            QuickCommandChip(
+                                text = c,
+                                onClick = { controller.sendCommand(c) },
+                                onLongClick = {
+                                    quickDraft = c
+                                    editingQuick = i
+                                },
+                            )
                         }
+                        QuickCommandChip(
+                            text = t("+ 新增"),
+                            onClick = {
+                                quickDraft = ""
+                                addingQuick = true
+                            },
+                            onLongClick = null,
+                        )
                     }
-
                     Row(
                         Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())
                             .padding(top = 4.dp),
@@ -348,6 +376,66 @@ fun ConsoleScreen(vm: AppViewModel, nav: NavController, id: String) {
                 }
             }
         }
+    }
+
+    editingQuick?.let { idx ->
+        AlertDialog(
+            onDismissRequest = { editingQuick = null },
+            title = { Text(t("修改快捷命令")) },
+            text = {
+                OutlinedTextField(
+                    value = quickDraft,
+                    onValueChange = { quickDraft = it },
+                    label = { Text(t("命令内容（留空即删除）")) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            // 删除 / 取消 / 保存 三个按钮并排
+            confirmButton = {
+                Row {
+                    TextButton(onClick = {
+                        quick = saveQuick(ctx, id, quick.filterIndexed { i, _ -> i != idx })
+                        editingQuick = null
+                    }) { Text(t("删除这条"), color = MaterialTheme.colorScheme.error) }
+                    TextButton(onClick = { editingQuick = null }) { Text(t("取消")) }
+                    TextButton(onClick = {
+                        quick = saveQuick(
+                            ctx,
+                            id,
+                            quick.mapIndexed { i, s -> if (i == idx) quickDraft.trim() else s }
+                                .filter { it.isNotBlank() },
+                        )
+                        editingQuick = null
+                    }) { Text(t("保存")) }
+                }
+            },
+        )
+    }
+
+    if (addingQuick) {
+        AlertDialog(
+            onDismissRequest = { addingQuick = false },
+            title = { Text(t("新增快捷命令")) },
+            text = {
+                OutlinedTextField(
+                    value = quickDraft,
+                    onValueChange = { quickDraft = it },
+                    label = { Text(t("命令内容，如 tps")) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (quickDraft.isNotBlank()) quick = saveQuick(ctx, id, quick + quickDraft.trim())
+                    addingQuick = false
+                }) { Text(t("添加")) }
+            },
+            dismissButton = {
+                TextButton(onClick = { addingQuick = false }) { Text(t("取消")) }
+            },
+        )
     }
 
     if (showRegen) {
@@ -705,4 +793,54 @@ private fun logColor(line: String): Color = when (LogParser.severity(line)) {
     LogParser.Severity.WARN -> Color(0xFFFFD166)
     LogParser.Severity.INFO -> Color(0xFFB0BEC5)
     LogParser.Severity.PLAIN -> Color(0xFF90A4AE)
+}
+
+/** 快捷命令的小胶囊：描边胶囊样式，整排（含「↓ 最新」）用同一个组件，高度自然一致 */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun QuickCommandChip(text: String, onClick: () -> Unit, onLongClick: (() -> Unit)?) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = Color.Transparent,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        modifier = Modifier
+            .heightIn(min = 32.dp)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
+    ) {
+        Box(Modifier.padding(horizontal = 12.dp, vertical = 6.dp), contentAlignment = Alignment.Center) {
+            Text(text, style = MaterialTheme.typography.labelLarge)
+        }
+    }
+}
+
+// ---------- 快捷命令存储：每个实例各一份，就存在控制台这一排上，不另开页面 ----------
+
+private const val QUICK_PREFS = "console_quick_commands"
+
+/** 用不可见字符分隔，避免命令里出现逗号/分号时被切开 */
+private const val QUICK_SEP = "\u0001"
+
+private val DEFAULT_QUICK = listOf(
+    "stop", "save-all", "reload confirm", "whitelist list", "list", "tps", "say hello",
+)
+
+private fun quickKey(instanceId: String): String = "list_$instanceId"
+
+private fun loadQuick(ctx: Context, instanceId: String): List<String> {
+    val raw = runCatching {
+        ctx.getSharedPreferences(QUICK_PREFS, Context.MODE_PRIVATE).getString(quickKey(instanceId), null)
+    }.getOrNull()
+    // 新实例第一次进入时用默认那一排，不继承别的实例的改动
+    if (raw.isNullOrEmpty()) return DEFAULT_QUICK
+    return raw.split(QUICK_SEP).filter { it.isNotBlank() }
+}
+
+private fun saveQuick(ctx: Context, instanceId: String, list: List<String>): List<String> {
+    val clean = list.map { it.trim() }.filter { it.isNotEmpty() }
+    runCatching {
+        ctx.getSharedPreferences(QUICK_PREFS, Context.MODE_PRIVATE).edit()
+            .putString(quickKey(instanceId), clean.joinToString(QUICK_SEP))
+            .apply()
+    }
+    return clean
 }

@@ -22,7 +22,7 @@ It bundles a trimmed OpenJDK runtime so the device can create and run Vanilla, P
 ## Features
 
 - **One-tap instance creation**: pick a server flavor and game version; the app matches the runtime and downloads the corresponding server jar automatically.
-- **Console**: live logs, command input, readiness checks, crash diagnostics.
+- **Console**: live logs, command input, readiness checks, crash diagnostics; a row of quick commands above the input sends on tap, long-press one to edit or delete it, and the "+" at the right end adds your own. Quick commands are stored per instance, so each instance keeps its own set.
 - **Triggers ("Playground")**: the "Playground" entry in the console builds when / if / then / else automation rules for each instance; every action can carry its own "on success" / "on failure" branch, and every run is logged.
 - **File management**: browse the server directory, edit `server.properties` (with localized labels) and text files, with binary-file detection.
 - **Plugin manager**: search and install plugins from Modrinth, with download integrity checks, progress and cancel.

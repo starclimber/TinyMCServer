@@ -5,6 +5,19 @@
 
 ---
 
+## [1.4.1] — 2026-11-16
+
+### 新增 / Added
+
+- **快捷命令可自定义**：控制台命令行上方那排快捷命令，点一下照旧发送；**长按**其中任意一条可以改内容或删除，最右边的「+ 新增」用来加一条自己的命令（比如想一键开白名单，就写 `whitelist on`）。改动即时保存；快捷命令按实例各自保存，不同实例互不影响。
+  **Configurable quick commands**: the shortcuts above the console command line still send on tap; **long-press** one to edit or delete it, and "+ Add" at the right end appends a command of your own (e.g. `whitelist on`). Changes are saved immediately and stored per instance, so instances don't affect each other.
+
+### 变更 / Changed
+
+- 版本号 `1.4.0` → `1.4.1`（versionCode 16）。
+
+---
+
 ## [1.4.0] — 2026-11-12
 
 > **注**：本版新增的「触发器（好玩的）」属于前期实验功能，可能会有一些小问题；遇到问题请到 [Issues](https://github.com/starclimber/TinyMCServer/issues) 反馈。
