@@ -120,6 +120,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
           SYNC_MODE: ${{ github.event_name == 'release' && 'one' || 'all' }}
+          # 临时：重建 v1.4.1，使它的发布时间晚于补建的 v1.4.0，回到列表最前
+          RECREATE_TAG: v1.4.1
         run: |
           set -euo pipefail
           if [ -z "${GITEA_TOKEN:-}" ]; then echo "::warning::缺少 GITEA_TOKEN，跳过 Gitea"; exit 0; fi

@@ -42,6 +42,15 @@ except Exception:
 print(next((str(r["id"]) for r in d if r.get("tag_name")==tag), ""))
 ' "$tag" 2>/dev/null || true)
 
+  # 可选：按 RECREATE_TAG 强制重建目标端的同名 Release。
+  # 目标站按「发布时间」倒序排列，补建旧版本会把旧版本顶到新版本上面，
+  # 用它删掉再建一次即可让新版本回到最前。
+  if [ -n "$rel_id" ] && [ "${RECREATE_TAG:-}" = "$tag" ]; then
+    echo "  按 RECREATE_TAG 重建 $tag（先删除旧 release id=$rel_id）"
+    curl -sS -X DELETE "${API}/repos/${OWNER}/${REPO}/releases/${rel_id}" "${AUTH[@]}" -o /dev/null || true
+    rel_id=""
+  fi
+
   if [ -n "$rel_id" ]; then
     echo "  更新已有 release id=$rel_id（$tag）"
     local patch
