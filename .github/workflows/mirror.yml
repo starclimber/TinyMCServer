@@ -99,6 +99,9 @@ jobs:
           git config --local --unset-all credential.helper || true
 
       - name: Sync release (with APK) to Codeberg
+        # Codeberg 对单个资产有体积上限，112MB 的 APK 会被 413 拒收。
+        # Release 本身能建成，所以这一步失败不该拖累后面的 Gitea 同步。
+        continue-on-error: true
         env:
           CODEBERG_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -110,6 +113,8 @@ jobs:
             "$CODEBERG_API" "$CODEBERG_USER" "$CODEBERG_REPO" "$CODEBERG_TOKEN" "${RELEASE_TAG:-}" "${SYNC_MODE:-all}"
 
       - name: Sync release (with APK) to Gitea
+        # 上一步（Codeberg）即使失败也要执行
+        if: ${{ !cancelled() }}
         env:
           GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
