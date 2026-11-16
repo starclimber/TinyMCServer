@@ -59,10 +59,19 @@ import json,os
 print(json.dumps({"name": os.environ["TITLE"], "body": os.environ["BODY"]}))
 ')
     curl -sS -f -X PATCH "${API}/repos/${OWNER}/${REPO}/releases/${rel_id}" \
-      "${AUTH[@]}" -H "Content-Type: application/json" -d "$patch" > /dev/null
+      "${AUTH[@]}" -H "Content-Type: application/json" -d "$patch" > /dev/null \
+      || echo "::warning::更新 release 标题/正文失败（$API $tag）"
   else
     if [ "$allow" != "1" ]; then
       echo "  目标端没有 $tag，跳过（全量模式不新建）"
+      return 0
+    fi
+    # 目标端没有对应 tag 时建不出 Release（早期版本的历史遗留），跳过即可
+    local tag_code
+    tag_code=$(curl -sS -o /dev/null -w "%{http_code}" "${AUTH[@]}" \
+      "${API}/repos/${OWNER}/${REPO}/tags/${tag}" || echo "000")
+    if [ "$tag_code" != "200" ]; then
+      echo "::warning::${API} 上没有 tag ${tag}，跳过该 Release"
       return 0
     fi
     echo "  创建 release $tag"
@@ -73,11 +82,11 @@ print(json.dumps({"tag_name": os.environ["TAG"], "name": os.environ["TITLE"],
                   "body": os.environ["BODY"], "draft": False, "prerelease": False}))
 ')
     rel_id=$(curl -sS -f -X POST "${API}/repos/${OWNER}/${REPO}/releases" \
-      "${AUTH[@]}" -H "Content-Type: application/json" -d "$create" \
-      | python3 -c 'import json,sys;print(str(json.load(sys.stdin).get("id","")))')
+      "${AUTH[@]}" -H "Content-Type: application/json" -d "$create" 2>/dev/null \
+      | python3 -c 'import json,sys;print(str(json.load(sys.stdin).get("id","")))' 2>/dev/null || true)
     if [ -z "$rel_id" ]; then
-      echo "::error::release 创建失败 ($API $tag)"
-      return 1
+      echo "::warning::release 创建失败 ($API $tag)"
+      return 0
     fi
   fi
 
