@@ -5,6 +5,19 @@
 
 ---
 
+## [1.4.2] — 2026-11-20
+
+### 新增 / Added
+
+- **关服命令二次确认**：控制台快捷命令里凡是 `stop`（含 `/stop`、`stop <参数>`，自己新增的也算）点一下不再直接执行，而是先弹「是否要关闭服务器？」，「是」才发送、「否」取消。手滑一次不会再直接把服关了。
+  **Stop confirmation**: quick commands that shut the server down (`stop`, `/stop`, `stop <args>` — including your own additions) no longer fire on tap; a "Do you want to shut down the server?" dialog appears and only "Yes" sends it.
+
+### 变更 / Changed
+
+- 版本号 `1.4.1` → `1.4.2`（versionCode 17）。
+
+---
+
 ## [1.4.1] — 2026-11-16
 
 ### 新增 / Added

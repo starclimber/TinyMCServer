@@ -134,6 +134,8 @@ fun ConsoleScreen(vm: AppViewModel, nav: NavController, id: String) {
     var editingQuick by remember { mutableStateOf<Int?>(null) }
     var quickDraft by remember { mutableStateOf("") }
     var addingQuick by remember { mutableStateOf(false) }
+    // 快捷命令里凡是 stop 类的，都必须先确认——它太容易误触，一点就把服务器关了
+    var pendingStop by remember { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
 
 
@@ -317,7 +319,11 @@ fun ConsoleScreen(vm: AppViewModel, nav: NavController, id: String) {
                         quick.forEachIndexed { i, c ->
                             QuickCommandChip(
                                 text = c,
-                                onClick = { controller.sendCommand(c) },
+                                onClick = {
+                                    // stop（含自定义的 "stop xxx"）一律先弹确认
+                                    if (isStopCommand(c)) pendingStop = c
+                                    else controller.sendCommand(c)
+                                },
                                 onLongClick = {
                                     quickDraft = c
                                     editingQuick = i
@@ -376,6 +382,23 @@ fun ConsoleScreen(vm: AppViewModel, nav: NavController, id: String) {
                 }
             }
         }
+    }
+
+    pendingStop?.let { cmd ->
+        AlertDialog(
+            onDismissRequest = { pendingStop = null },
+            title = { Text(t("关闭服务器")) },
+            text = { Text(t("是否要关闭服务器？")) },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingStop = null
+                    controller.sendCommand(cmd)
+                }) { Text(t("是")) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingStop = null }) { Text(t("否")) }
+            },
+        )
     }
 
     editingQuick?.let { idx ->
@@ -825,6 +848,11 @@ private val DEFAULT_QUICK = listOf(
 )
 
 private fun quickKey(instanceId: String): String = "list_$instanceId"
+
+/** 判定一条快捷命令是不是「关服」：stop、/stop、stop <参数> 都算 */
+private val STOP_RE = Regex("^/?stop(\\s|$)", RegexOption.IGNORE_CASE)
+
+private fun isStopCommand(cmd: String): Boolean = STOP_RE.containsMatchIn(cmd.trim())
 
 private fun loadQuick(ctx: Context, instanceId: String): List<String> {
     val raw = runCatching {
