@@ -3,6 +3,8 @@ package dev.tinymcserver.app.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import dev.tinymcserver.app.core.datapack.DatapackSearch
+import dev.tinymcserver.app.core.datapack.Datapacks
 import dev.tinymcserver.app.core.model.ServerInstance
 import dev.tinymcserver.app.core.net.Http
 import dev.tinymcserver.app.core.plugin.PluginSearch
@@ -264,6 +266,72 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             } catch (e: Exception) {
                 DownloadNotifier.finish(ctx, taskId)
                 toast(t("插件下载失败：%s", e.message))
+                onDone(false)
+            }
+        }
+    }
+
+    /** 从 Modrinth 下载数据包，落到 `<实例目录>/<level-name>/datapacks/` */
+    fun downloadDatapack(
+        inst: ServerInstance,
+        projectId: String,
+        title: String,
+        onDone: (Boolean) -> Unit = {},
+    ) {
+        val jobTitle = t("下载数据包 %s", title)
+        viewModelScope.launch {
+            val taskId = DownloadNotifier.start(ctx, jobTitle)
+            try {
+                val d = withContext(Dispatchers.IO) {
+                    DatapackSearch.pickDownload(projectId, inst.config.mcVersion)
+                } ?: throw RuntimeException(t("Modrinth 上没有与该 MC 版本兼容的文件"))
+                if (d.size > 0 && d.size < 512) {
+                    throw RuntimeException(t("上游文件异常（仅 %s 字节）", d.size))
+                }
+                val dir = Datapacks.dir(ctx, inst.id)
+                dir.mkdirs()
+                val out = File(dir, d.filename)
+                runCatching { if (out.exists()) out.delete() }
+                withContext(Dispatchers.IO) {
+                    Http.download(
+                        url = d.url,
+                        dest = out,
+                        isCancelled = { DownloadNotifier.isCancelled(taskId) },
+                        expectedSize = d.size,
+                    ) { read, total ->
+                        val p = if (total > 0) read.toFloat() / total else 0f
+                        val totalTxt = if (total > 0) "${total / 1024}KB" else "?"
+                        DownloadNotifier.progress(
+                            ctx, taskId, jobTitle, p,
+                            t("下载中 %sKB / %s", read / 1024, totalTxt),
+                        )
+                    }
+                }
+                val expected = when {
+                    d.sha512.isNotBlank() -> HashUtil.SHA512 to d.sha512
+                    d.sha1.isNotBlank() -> HashUtil.SHA1 to d.sha1
+                    else -> null
+                }
+                if (expected != null) {
+                    val ok = withContext(Dispatchers.IO) {
+                        HashUtil.verify(out, expected.second, expected.first)
+                    }
+                    if (ok == false) {
+                        runCatching { out.delete() }
+                        throw RuntimeException(t("数据包校验失败（%s 不匹配），已删除", expected.first))
+                    }
+                }
+
+                DownloadNotifier.finish(ctx, taskId)
+                toast(t("已下载 %s（重启服务端后生效）", d.filename))
+                onDone(true)
+            } catch (e: CancellationException) {
+                DownloadNotifier.finish(ctx, taskId)
+                toast(t("已取消下载"))
+                onDone(false)
+            } catch (e: Exception) {
+                DownloadNotifier.finish(ctx, taskId)
+                toast(t("数据包下载失败：%s", e.message))
                 onDone(false)
             }
         }

@@ -36,6 +36,7 @@ import dev.tinymcserver.app.ui.screens.AboutScreen
 import dev.tinymcserver.app.ui.screens.BackupScreen
 import dev.tinymcserver.app.ui.screens.ConsoleScreen
 import dev.tinymcserver.app.ui.screens.CreateWizardScreen
+import dev.tinymcserver.app.ui.screens.DatapackImportScreen
 import dev.tinymcserver.app.ui.screens.FileBrowserScreen
 import dev.tinymcserver.app.ui.screens.FrpConsoleScreen
 import dev.tinymcserver.app.ui.screens.FrpEditScreen
@@ -154,6 +155,10 @@ fun AppNav() {
                 "pluginimport/{id}",
                 arguments = listOf(navArgument("id") { type = NavType.StringType }),
             ) { e -> PluginImportScreen(vm, nav, e.arguments?.getString("id").orEmpty()) }
+            composable(
+                "datapacks/{id}",
+                arguments = listOf(navArgument("id") { type = NavType.StringType }),
+            ) { e -> DatapackImportScreen(vm, nav, e.arguments?.getString("id").orEmpty()) }
             composable(
                 "triggers/{id}",
                 arguments = listOf(navArgument("id") { type = NavType.StringType }),

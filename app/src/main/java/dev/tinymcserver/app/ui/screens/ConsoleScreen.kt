@@ -353,6 +353,9 @@ fun ConsoleScreen(vm: AppViewModel, nav: NavController, id: String) {
                         OutlinedButton(onClick = { nav.navigate("pluginimport/$id") }) {
                             Text(t("导入插件"))
                         }
+                        OutlinedButton(onClick = { nav.navigate("datapacks/$id") }) {
+                            Text(t("导入数据包"))
+                        }
                         OutlinedButton(onClick = { showArgs = true }) { Text(t("参数")) }
                         // 诊断入口只留一个：崩溃摘要 + 最近日志；（自检 / 深诊）收进对话框内的次要操作
                         OutlinedButton(onClick = { showDiag = true }) {

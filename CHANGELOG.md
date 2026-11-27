@@ -5,6 +5,19 @@
 
 ---
 
+## [1.4.3] — 2026-11-25
+
+### 新增 / Added
+
+- **导入数据包**：控制台按钮行在「导入插件」右边新增「导入数据包」，页面与插件页一一对应，分「本地导入 / 链接下载 / 在线搜索 / 已安装」四个页签——可以从手机里选 `.zip`（单个 `.mcfunction` 也行）、填直链下载、或直接在 Modrinth 搜数据包安装。文件落在当前世界的 `datapacks/` 目录（跟着 `level-name` 走），「已安装」页能看到已装内容、大小与目录路径，也能删除。数据包需要**重启服务端**才能生效，和插件一致；不要用 `/reload`——它会就地重载数据包，遇到不兼容的包会让服务端直接崩在加载阶段。
+  **Import datapacks**: a new "Import datapack" button next to "Import plugin" in the console opens a page laid out just like the plugin page — local import, download by link, online search (Modrinth) and installed. Files go into the current world's `datapacks/` folder (following `level-name`); the installed tab lists them with size and directory path and allows deletion. Datapacks take effect after a **server restart**, same as plugins; avoid `/reload` — it reloads datapacks in place and an incompatible pack will crash the server during loading.
+
+### 变更 / Changed
+
+- 版本号 `1.4.2` → `1.4.3`（versionCode 18）。
+
+---
+
 ## [1.4.2] — 2026-11-20
 
 ### 新增 / Added

@@ -26,6 +26,7 @@ It bundles a trimmed OpenJDK runtime so the device can create and run Vanilla, P
 - **Triggers ("Playground")**: the "Playground" entry in the console builds when / if / then / else automation rules for each instance; every action can carry its own "on success" / "on failure" branch, and every run is logged.
 - **File management**: browse the server directory, edit `server.properties` (with localized labels) and text files, with binary-file detection.
 - **Plugin manager**: search and install plugins from Modrinth, with download integrity checks, progress and cancel.
+- **Datapacks**: the console's "Import datapack" page mirrors the plugin page — pick a local `.zip`, download by link, search Modrinth, or manage what's installed; files land in the current world's `datapacks/` and apply after a server restart.
 - **Backups & player management**: back up / restore instances, manage whitelist / OP / ban lists.
 - **Skin Forge**: deterministically generate a 64×64 Minecraft Java skin from a "seed + style", exportable as PNG.
 - **frp tunneling**: expose the phone-hosted server to the internet, configurable via form / TOML / INI, and auto-started together with the server.
